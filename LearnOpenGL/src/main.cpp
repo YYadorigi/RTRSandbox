@@ -2,21 +2,23 @@
 #include <direct.h>
 #include <assert.h>
 #include <shader.h>
+#include <texture.h>
 #include <GLFW/glfw3.h>
 
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
 float mesh[] = {
-		 0.5f,  0.5f, 0.0f,  // top right
-		 0.5f, -0.5f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f   // top left 
+	//	---- Position ----	---- Color ----		- Texture Coords -
+		0.5f,  0.5f, 0.0f,	1.0f, 0.0f, 0.0f,	1.0f, 1.0f,	// top right
+		0.5f, -0.5f, 0.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,	// bottom right
+		-0.5f, -0.5f, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,	// bottom left
+		-0.5f,  0.5f, 0.0f,	1.0f, 1.0f, 0.0f,	0.0f, 1.0f,	// top left
 };
 
-unsigned int indices[] = {  // note that we start from 0!
-	0, 1, 3,  // first Triangle
-	1, 2, 3,  // second Triangle
+unsigned int indices[] = {
+	0, 1, 3,	// first triangle
+	1, 2, 3,	// second triangle
 };
 
 void processInput(GLFWwindow* window)
@@ -80,12 +82,16 @@ int main()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(mesh), mesh, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0); // vertex coords
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);	// vertex coords
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));	// vertex color
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));	// texture coords
+	glEnableVertexAttribArray(2);
 
-	// Unbind buffers
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	// Load texture
+	Texture2D texture = Texture2D("src/textures/container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
+		0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
 
 	// Load shader program
 	Shader shader = Shader("src/shaders/vertex.glsl", "src/shaders/fragment.glsl");
@@ -100,6 +106,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Render
+		texture.bind();
 		shader.use();
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
