@@ -18,6 +18,7 @@ Texture2D::Texture2D(const char* path, unsigned int wrapS, unsigned int wrapT, u
 
 	// Load image
 	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
 	if (data) {
 		glTexImage2D(GL_TEXTURE_2D, mipmapLevel, saveFormat, width, height, 0, sourceFormat, sourceDataType, data);

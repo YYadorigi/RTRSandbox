@@ -22,8 +22,10 @@ project "LearnOpenGL"
 
 	includedirs {
 		"%{prj.name}/src",
+		"%{prj.name}/third-party",
 		"%{prj.name}/third-party/glfw/include",
 		"%{prj.name}/third-party/glad/include",
+		"%{prj.name}/third-party/glm",
 	}
 
 	links {
@@ -39,7 +41,9 @@ project "LearnOpenGL"
 	postbuildcommands {
 		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src"),
 		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/shaders"),
+		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/textures"),
 		("{COPYFILE} src/shaders ../bin/" .. outputdir .. "/%{prj.name}/src/shaders/"),
+		("{COPYFILE} src/textures ../bin/" .. outputdir .. "/%{prj.name}/src/textures/"),
 	}
 
 	filter "system:linux"

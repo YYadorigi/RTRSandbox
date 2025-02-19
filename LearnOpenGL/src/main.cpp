@@ -90,13 +90,18 @@ int main()
 	glEnableVertexAttribArray(2);
 
 	// Load texture
-	Texture2D texture = Texture2D("src/textures/container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
+	Texture2D containerTex = Texture2D("src/textures/container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
 		0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
+	Texture2D faceTex = Texture2D("src/textures/awesomeface.png", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
+		0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 
 	// Load shader program
 	Shader shader = Shader("src/shaders/vertex.glsl", "src/shaders/fragment.glsl");
 
 	// Render loop
+	shader.use();
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
 	while (!glfwWindowShouldClose(window)) {
 		// Handle device input
 		processInput(window);
@@ -106,8 +111,11 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Render
-		texture.bind();
-		shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		containerTex.bind();
+		glActiveTexture(GL_TEXTURE1);
+		faceTex.bind();
+
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
