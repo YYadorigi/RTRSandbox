@@ -1,9 +1,14 @@
 #include <iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <direct.h>
 #include <assert.h>
 #include <shader.h>
 #include <texture.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
@@ -95,13 +100,21 @@ int main()
 	Texture2D faceTex = Texture2D("src/textures/awesomeface.png", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
 		0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 
+	// Bind textures
+	glActiveTexture(GL_TEXTURE0);
+	containerTex.bind();
+	glActiveTexture(GL_TEXTURE1);
+	faceTex.bind();
+
 	// Load shader program
 	Shader shader = Shader("src/shaders/vertex.glsl", "src/shaders/fragment.glsl");
 
-	// Render loop
+	// Set textures
 	shader.use();
 	shader.setInt("texture1", 0);
 	shader.setInt("texture2", 1);
+
+	// Render loop
 	while (!glfwWindowShouldClose(window)) {
 		// Handle device input
 		processInput(window);
@@ -110,13 +123,25 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// Render
-		glActiveTexture(GL_TEXTURE0);
-		containerTex.bind();
-		glActiveTexture(GL_TEXTURE1);
-		faceTex.bind();
-
+		// Designate objects to render
 		glBindVertexArray(VAO);
+
+		// Construct transformation matrix
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, glm::radians(static_cast<float>(glfwGetTime() * 180.0 / M_PI)), glm::vec3(0.0f, 0.0f, 1.0f));
+		trans = glm::scale(trans, glm::vec3(1.2f, 0.8f, 1.0f));
+
+		shader.setTransform("transform", glm::value_ptr(trans));
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		// Construct transformation matrix
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+		trans = glm::rotate(trans, glm::radians(float(glfwGetTime() * 180.0 / M_PI)), glm::vec3(0.0f, 0.0f, 1.0f));
+		trans = glm::scale(trans, glm::vec3(static_cast<float>(fabs(sin(glfwGetTime())))));
+
+		shader.setTransform("transform", glm::value_ptr(trans));
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window);
