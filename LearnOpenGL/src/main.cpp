@@ -28,32 +28,50 @@ static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
-float vertices[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,	// left-bottom-behind, 0
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,	// left-bottom-front, 1
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,	// left-top-behind, 2
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,	// left-top-front, 3
+float cubeMesh[] = {
+	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+	0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+	0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+	0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+	-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
 
-	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,	// right-bottom-behind, 4
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,	// right-bottom-front, 5
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,	// right-top-behind, 6
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,	// right-top-front, 7
-};
+	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+	0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+	0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+	0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+	-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
 
-unsigned int indices[] = {
-	1, 3, 5,	// front
-	7, 3, 5,	// front
-	0, 2, 4,	// back
-	6, 2, 4,	// back
-	1, 0, 3,	// left
-	2, 0, 3,	// left
-	5, 4, 7,	// right
-	6, 4, 7,	// right
-	1, 0, 5,	// bottom
-	4, 0, 5,	// bottom
-	3, 2, 7,	// top
-	6, 2, 7,	// top
+	-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+	-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+	-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+	-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+
+	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+	0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+	0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+
+	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+	0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+	0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+	0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+	-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+
+	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+	0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+	0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+	0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+	-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
 };
+const unsigned int NUM_TRIANGLES = 36;
 
 glm::vec3 cubePositions[] = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
@@ -67,6 +85,23 @@ glm::vec3 cubePositions[] = {
 	glm::vec3(1.5f,  0.2f, -1.5f),
 	glm::vec3(-1.3f,  1.0f, -1.5f),
 };
+
+glm::vec3 cubeColors[] = {
+	glm::vec3(1.0f, 0.5f, 0.1f),
+	glm::vec3(1.0f, 0.5f, 0.2f),
+	glm::vec3(1.0f, 0.5f, 0.3f),
+	glm::vec3(1.0f, 0.5f, 0.4f),
+	glm::vec3(1.0f, 0.5f, 0.5f),
+	glm::vec3(1.0f, 0.5f, 0.6f),
+	glm::vec3(1.0f, 0.5f, 0.7f),
+	glm::vec3(1.0f, 0.5f, 0.8f),
+	glm::vec3(1.0f, 0.5f, 0.9f),
+	glm::vec3(1.0f, 0.5f, 1.0f),
+};
+
+glm::vec3 lightPosition(0.0f, 0.0f, 3.0f);
+glm::vec3 lightColor = glm::vec3(1.0f);
+glm::vec3 lightScale = glm::vec3(0.1f);
 
 void processInput(GLFWwindow* window);
 
@@ -86,53 +121,59 @@ int main()
 	}
 
 	// Load vertex data
-	unsigned int VAO, VBO, EBO;
+	unsigned int VAO, lightVAO, VBO;
 	glGenVertexArrays(1, &VAO);
+	glGenVertexArrays(1, &lightVAO);
 	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
 
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);	// vertex coords
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), cubeMesh, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);	// vertex coords
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));	// texture coords
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));	// normal coords
 	glEnableVertexAttribArray(1);
 
-	// Load texture
-	Texture2D containerTex = Texture2D("src/textures/container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
-		0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
-	Texture2D faceTex = Texture2D("src/textures/awesomeface.png", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
-		0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+	glBindVertexArray(lightVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), cubeMesh, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // vertex coords
+	glEnableVertexAttribArray(0);
 
-	glActiveTexture(GL_TEXTURE0);
-	containerTex.bind();
-	glActiveTexture(GL_TEXTURE1);
-	faceTex.bind();
-
-	// Load shader program
-	Shader shader = Shader("src/shaders/vertex.glsl", "src/shaders/fragment.glsl");
-	shader.use();
-	shader.setInt("texture1", 0);
-	shader.setInt("texture2", 1);
-
-	// Set render mode
-	glEnable(GL_DEPTH_TEST);
-
-	// Render loop
+	// Random number generator
 	srand(static_cast<unsigned int>(time(0)));
 	std::vector<double> randNum;
 	for (auto pos : cubePositions) {
 		randNum.emplace_back(static_cast<double>(rand() % (sizeof(cubePositions) / sizeof(cubePositions[0]))));
 	}
 
+	// Load texture
+	// Texture2D containerTex = Texture2D("src/textures/container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
+	// 0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
+	// Texture2D faceTex = Texture2D("src/textures/awesomeface.png", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
+	// 0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+
+	// glActiveTexture(GL_TEXTURE0);
+	// containerTex.bind();
+	// glActiveTexture(GL_TEXTURE1);
+	// faceTex.bind();
+
+	// Load shader program
+	Shader cubeShader = Shader("src/shaders/blinn_phong_vs.glsl", "src/shaders/blinn_phong_fs.glsl");
+	Shader lightShader = Shader("src/shaders/light_vs.glsl", "src/shaders/light_fs.glsl");
+
+	// Set render mode
+	glEnable(GL_DEPTH_TEST);
+
+	// Render loop
 	while (!glfwWindowShouldClose(window)) {
 		// Time logic
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		lightPosition.x = 3.0f * sin(static_cast<float>(glfwGetTime()));
+		lightPosition.z = 3.0f * cos(static_cast<float>(glfwGetTime()));
 
 		// Handle device input
 		processInput(window);
@@ -141,10 +182,7 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);	// Background color
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Designate VAO
-		glBindVertexArray(VAO);
-
-		// Projection matrix
+		// Draw
 		glm::mat4 projection = glm::perspective(
 			glm::radians(camera.getFov()),
 			static_cast<float>(SCREEN_WIDTH / SCREEN_HEIGHT),
@@ -152,20 +190,43 @@ int main()
 			100.0f
 		);
 
-		// View matrix
 		glm::mat4 view = camera.getViewMatrix();
 
-		// Model matrices and Drawcalls
+		// Draw the light source
+		glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), lightPosition);
+		lightModel = glm::scale(lightModel, lightScale);
+
+		lightShader.use();
+		lightShader.setTransform("model", glm::value_ptr(lightModel));
+		lightShader.setTransform("view", glm::value_ptr(view));
+		lightShader.setTransform("projection", glm::value_ptr(projection));
+
+		glBindVertexArray(lightVAO);
+		glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
+
+		// Draw the cubes
+		cubeShader.use();
+		cubeShader.setVec3("ambientColor", glm::value_ptr(glm::vec3(1.0f)));
+		cubeShader.setFloat("ambientIntensity", 0.05f);
+		cubeShader.setVec3("lightColor", glm::value_ptr(lightColor));
+		cubeShader.setFloat("lightIntensity", 1.0f);
+		cubeShader.setVec3("lightPos", glm::value_ptr(lightPosition));
+		cubeShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+		cubeShader.setTransform("view", glm::value_ptr(view));
+		cubeShader.setTransform("projection", glm::value_ptr(projection));
+
+		glBindVertexArray(VAO);
 		auto it = randNum.begin();
 		for (auto pos : cubePositions) {
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
-			model = glm::rotate(
-				model,
+			glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), pos);
+			cubeModel = glm::rotate(
+				cubeModel,
 				glm::radians(static_cast<float>((glfwGetTime() + *it) * 180.0 / M_PI)),
 				glm::vec3(1.0f, 1.0f, 0.0f)
 			);
-			shader.setTransform("transform", glm::value_ptr(projection * view * model));
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+			cubeShader.setVec3("surfaceColor", glm::value_ptr(cubeColors[static_cast<int>(*it)]));
+			cubeShader.setTransform("model", glm::value_ptr(cubeModel));
+			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
 			++it;
 		}
 
@@ -175,8 +236,8 @@ int main()
 
 	// Clean up data
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &lightVAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
 
 	// Destroy window
 	glfwDestroyWindow(window);
