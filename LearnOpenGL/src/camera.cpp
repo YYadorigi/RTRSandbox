@@ -36,8 +36,8 @@ void Camera::updatePitchYaw(float offsetX, float offsetY)
 void Camera::updateDirection()
 {
 	// Quaternion rotation
-	glm::quat qPitch = glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::quat qYaw = glm::angleAxis(glm::radians(yaw), glm::vec3(0.0f, -1.0f, 0.0f));
+	glm::quat qPitch = glm::angleAxis(glm::radians(pitch), getRight());
+	glm::quat qYaw = glm::angleAxis(glm::radians(yaw), -getUp());
 	glm::quat qResult = qPitch * qYaw;
 	direction = qResult * initialDirection;
 }

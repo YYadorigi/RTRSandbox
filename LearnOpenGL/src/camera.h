@@ -16,8 +16,9 @@ public:
 	void updatePitchYaw(float offsetX, float offsetY);
 	void updateDirection();
 	inline glm::vec3 getPosition() const { return position; }
-	inline glm::vec3 getDirection() const { return direction; }
-	inline glm::vec3 getUp() const { return up; }
+	inline glm::vec3 getDirection() const { return glm::normalize(direction); }
+	inline glm::vec3 getUp() const { return glm::normalize(up); }
+	inline glm::vec3 getRight() const { return glm::normalize(glm::cross(direction, up)); }
 	inline glm::mat4 getViewMatrix() const { return glm::lookAt(position, position + direction, up); }
 	inline float getFov() const { return fov; }
 private:

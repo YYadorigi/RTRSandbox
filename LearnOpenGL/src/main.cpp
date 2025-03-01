@@ -196,9 +196,9 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		camera.updatePosition(-camera.getDirection(), deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.updatePosition(-glm::cross(camera.getDirection(), camera.getUp()), deltaTime);
+		camera.updatePosition(-camera.getRight(), deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.updatePosition(glm::cross(camera.getDirection(), camera.getUp()), deltaTime);
+		camera.updatePosition(camera.getRight(), deltaTime);
 }
 
 static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile)
