@@ -18,6 +18,7 @@ static Camera camera(
 	glm::vec3(0.0f, 0.0f, 5.0f),
 	glm::vec3(0.0f, 0.0f, -1.0f),
 	glm::vec3(0.0f, 1.0f, 0.0f),
+	45.0f,
 	5.0f,
 	0.05f
 );
@@ -144,8 +145,8 @@ int main()
 		glBindVertexArray(VAO);
 
 		// Projection matrix
-		static glm::mat4 projection = glm::perspective(
-			glm::radians(45.0f),
+		glm::mat4 projection = glm::perspective(
+			glm::radians(camera.getFov()),
 			static_cast<float>(SCREEN_WIDTH / SCREEN_HEIGHT),
 			0.1f,
 			100.0f
@@ -265,6 +266,11 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 		lastY = static_cast<float>(ypos);
 		camera.updatePitchYaw(offsetX, offsetY);
 		camera.updateDirection();
+	});
+
+	// Set callback for mouse scroll
+	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+		camera.updateFov(static_cast<float>(yoffset));
 	});
 
 	return window;
