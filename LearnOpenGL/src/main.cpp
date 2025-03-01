@@ -18,8 +18,11 @@ static Camera camera(
 	glm::vec3(0.0f, 0.0f, 5.0f),
 	glm::vec3(0.0f, 0.0f, -1.0f),
 	glm::vec3(0.0f, 1.0f, 0.0f),
-	0.05f
+	5.0f
 );
+
+static float deltaTime = 0.0f;	// Time between current frame and last frame
+static float lastFrame = 0.0f;	// Time of last frame
 
 float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,	// left-bottom-behind, 0
@@ -78,13 +81,12 @@ int main()
 		return -1;
 	}
 
-	// Create vertex array objects and buffers
+	// Load vertex data
 	unsigned int VAO, VBO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 
-	// Bind data to VAO
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -101,7 +103,6 @@ int main()
 	Texture2D faceTex = Texture2D("src/textures/awesomeface.png", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
 		0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 
-	// Bind textures
 	glActiveTexture(GL_TEXTURE0);
 	containerTex.bind();
 	glActiveTexture(GL_TEXTURE1);
@@ -109,35 +110,38 @@ int main()
 
 	// Load shader program
 	Shader shader = Shader("src/shaders/vertex.glsl", "src/shaders/fragment.glsl");
-
-	// Set shader uniforms
 	shader.use();
 	shader.setInt("texture1", 0);
 	shader.setInt("texture2", 1);
 
-	// Set random rotation for each cube
+	// Set render mode
+	glEnable(GL_DEPTH_TEST);
+
+	// Render loop
 	srand(static_cast<unsigned int>(time(0)));
 	std::vector<double> randNum;
 	for (auto pos : cubePositions) {
 		randNum.emplace_back(static_cast<double>(rand() % (sizeof(cubePositions) / sizeof(cubePositions[0]))));
 	}
 
-	// Set render mode
-	glEnable(GL_DEPTH_TEST);
-
-	// Render loop
 	while (!glfwWindowShouldClose(window)) {
+		// Time logic
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+		// printf("FPS: %f\n", 1.0f / deltaTime);
+
 		// Handle device input
 		processInput(window);
 
-		// Background color
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		// Clear screen
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);	// Background color
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Designate objects to render
+		// Designate VAO
 		glBindVertexArray(VAO);
 
-		// Construct transformation matrix
+		// Projection matrix
 		static glm::mat4 projection = glm::perspective(
 			glm::radians(45.0f),
 			static_cast<float>(SCREEN_WIDTH / SCREEN_HEIGHT),
@@ -145,8 +149,10 @@ int main()
 			100.0f
 		);
 
+		// View matrix
 		glm::mat4 view = camera.getViewMatrix();
 
+		// Model matrices and Drawcalls
 		auto it = randNum.begin();
 		for (auto pos : cubePositions) {
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
@@ -164,6 +170,7 @@ int main()
 		glfwPollEvents();
 	}
 
+	// Clean up data
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
@@ -182,13 +189,13 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.updatePosition(camera.getDirection());
+		camera.updatePosition(camera.getDirection(), deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.updatePosition(-camera.getDirection());
+		camera.updatePosition(-camera.getDirection(), deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.updatePosition(-glm::cross(camera.getDirection(), camera.getUp()));
+		camera.updatePosition(-glm::cross(camera.getDirection(), camera.getUp()), deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.updatePosition(glm::cross(camera.getDirection(), camera.getUp()));
+		camera.updatePosition(glm::cross(camera.getDirection(), camera.getUp()), deltaTime);
 }
 
 static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile)

@@ -10,7 +10,7 @@ class Camera
 {
 public:
 	Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float speed);
-	inline void updatePosition(glm::vec3 direction) { position += speed * glm::normalize(direction); }
+	inline void updatePosition(glm::vec3 direction, float deltaTime) { position += speed * deltaTime * glm::normalize(direction); }
 	inline glm::vec3 getPosition() const { return position; }
 	inline glm::vec3 getDirection() const { return direction; }
 	inline glm::vec3 getUp() const { return up; }
