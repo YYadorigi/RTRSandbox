@@ -1,4 +1,4 @@
-#include "texture.h"
+#include <texture.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -54,9 +54,4 @@ Texture2D& Texture2D::operator=(Texture2D&& other) noexcept
 {
 	this->ID = other.ID;
 	return *this;
-}
-
-void Texture2D::bind()
-{
-	glBindTexture(GL_TEXTURE_2D, ID);
 }

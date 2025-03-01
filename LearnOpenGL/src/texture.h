@@ -12,7 +12,7 @@ public:
 	Texture2D& operator=(const Texture2D& other);
 	Texture2D(Texture2D&& other) noexcept;
 	Texture2D& operator=(Texture2D&& other) noexcept;
-	void bind();
+	inline void bind() const { glBindTexture(GL_TEXTURE_2D, ID); }
 private:
 	unsigned int ID;
 };
