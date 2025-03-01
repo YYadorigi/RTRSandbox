@@ -5,12 +5,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class Camera
 {
 public:
-	Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float speed);
+	Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float speed, float sensitivity);
 	inline void updatePosition(glm::vec3 direction, float deltaTime) { position += speed * deltaTime * glm::normalize(direction); }
+	void updatePitchYaw(float offsetX, float offsetY);
+	void updateDirection();
 	inline glm::vec3 getPosition() const { return position; }
 	inline glm::vec3 getDirection() const { return direction; }
 	inline glm::vec3 getUp() const { return up; }
@@ -20,4 +23,9 @@ private:
 	glm::vec3 direction;
 	glm::vec3 up;
 	float speed;
+
+	glm::vec3 initialDirection;
+	float pitch;
+	float yaw;
+	float sensitivity;
 };

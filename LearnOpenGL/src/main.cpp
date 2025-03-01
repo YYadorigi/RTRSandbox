@@ -18,11 +18,14 @@ static Camera camera(
 	glm::vec3(0.0f, 0.0f, 5.0f),
 	glm::vec3(0.0f, 0.0f, -1.0f),
 	glm::vec3(0.0f, 1.0f, 0.0f),
-	5.0f
+	5.0f,
+	0.05f
 );
 
 static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
+static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
+static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
 float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,	// left-bottom-behind, 0
@@ -129,7 +132,6 @@ int main()
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		// printf("FPS: %f\n", 1.0f / deltaTime);
 
 		// Handle device input
 		processInput(window);
@@ -244,6 +246,25 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 	// Set callback for window resize
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int newWidth, int newHeight) {
 		glViewport(0, 0, newWidth, newHeight);
+	});
+
+	// Set input mode
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);	// Hide cursor and capture it
+
+	// Set callback for mouse movement
+	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
+		static bool firstMouse = true;
+		if (firstMouse) {
+			lastX = static_cast<float>(xpos);
+			lastY = static_cast<float>(ypos);
+			firstMouse = false;
+		}
+		float offsetX = static_cast<float>(xpos) - lastX;
+		float offsetY = lastY - static_cast<float>(ypos);	// Reversed since y-coordinates range from bottom to top
+		lastX = static_cast<float>(xpos);
+		lastY = static_cast<float>(ypos);
+		camera.updatePitchYaw(offsetX, offsetY);
+		camera.updateDirection();
 	});
 
 	return window;
