@@ -27,8 +27,8 @@ struct SpotLight
 {
     vec3 position;
     vec3 direction;
-    float cutOff;
-    float outerCutOff;    
+    float cutoff;
+    float outerCutoff;    
     
     vec3 color;
     float intensity;
@@ -64,12 +64,14 @@ void main()
     
     vec3 result = vec3(0.0);
 
-    // result += shadingDirLight(dirLight, normal, viewDir);
+    result += shadingDirLight(dirLight, normal, viewDir);
     
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += shadingPointLight(pointLights[i], normal, fragPos, viewDir);    
+    {
+        result += shadingPointLight(pointLights[i], normal, fragPos, viewDir);  
+    }
     
-    // result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
+    result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
     
     result += texture(material.ambient, texCoords).rgb * ambientLight.color * ambientLight.intensity;
     
@@ -107,9 +109,9 @@ vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     vec3 original = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
 
-    float theta = dot(lightDir, normalize(-light.direction)); 
-    float epsilon = light.cutOff - light.outerCutOff;
-    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+    float theta = dot(lightDir, normalize(-light.direction));
+    float epsilon = light.cutoff - light.outerCutoff;
+    float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
     return original * intensity;
 }

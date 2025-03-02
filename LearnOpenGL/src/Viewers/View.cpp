@@ -2,7 +2,7 @@
 
 glm::mat4 Frustum::getProjectionMatrix() const
 {
-	return glm::perspective(fov, aspectRatio, near, far);
+	return glm::perspective(glm::radians(fov), aspectRatio, near, far);
 }
 
 View::View(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov, float aspectRatio, float near, float far)

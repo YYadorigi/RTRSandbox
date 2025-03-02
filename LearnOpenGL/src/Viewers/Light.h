@@ -18,7 +18,9 @@ public:
 	inline glm::vec3 getColor() const { return color; }
 	inline float getIntensity() const { return intensity; }
 	inline void updatePosition(float x, float y, float z) { position = glm::vec3(x, y, z); }
-	inline void updateDirection(glm::vec3 target) { direction = glm::normalize(target - position); }
+	inline void updatePosition(glm::vec3 position) { this->position = position; }
+	inline void updateTarget(glm::vec3 target) { direction = glm::normalize(target - position); }
+	inline void updateDirection(glm::vec3 direction) { this->direction = glm::normalize(direction); }
 protected:
 	glm::vec3 color;
 	float intensity;
@@ -44,4 +46,23 @@ public:
 protected:
 	float cutoff;
 	float outerCutoff;
+};
+
+/*
+* A struct to represent the ambient lighting effect in a scene.
+*/
+struct AmbientLight
+{
+	glm::vec3 color;
+	float intensity;
+};
+
+/*
+* A struct to represent a directional lighting effect in a scene.
+*/
+struct DirectionalLight
+{
+	glm::vec3 direction;
+	glm::vec3 color;
+	float intensity;
 };

@@ -64,8 +64,27 @@ Light pointLights[] = {
 	)
 };
 
-glm::vec3 ambientColor = glm::vec3(1.0f);
-float ambientIntensity = 0.1f;
+AmbientLight ambient = {
+	glm::vec3(1.0f),	// color
+	0.1f,	// intensity
+};
+
+DirectionalLight directional = {
+	glm::vec3(-0.2f, -1.0f, -0.3f),	// direction
+	glm::vec3(1.0f),	// color
+	0.5f,	// intensity
+};
+
+SpotLight spotLight(
+	glm::vec3(0.0f, 0.0f, 5.0f),	// position
+	glm::vec3(0.0f),				// target
+	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+	frustum,
+	glm::vec3(1.0f, 1.0f, 1.0f),	// color
+	2.0f,	// intensity
+	glm::cos(glm::radians(12.5f)),	// cutoff
+	glm::cos(glm::radians(17.5f))	// outer cutoff
+);
 
 float cubeMesh[] = {
 	// positions          // normals           // texture coords
@@ -165,13 +184,6 @@ int main()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); // vertex coords
 	glEnableVertexAttribArray(0);
 
-	// Random number generator
-	srand(static_cast<unsigned int>(time(0)));
-	std::vector<double> randNum;
-	for (auto pos : cubePositions) {
-		randNum.emplace_back(static_cast<double>(rand() % (sizeof(cubePositions) / sizeof(cubePositions[0]))));
-	}
-
 	// Load texture
 	Texture2D cubeAmbient = Texture2D("src/Textures/container.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
 		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
@@ -196,14 +208,21 @@ int main()
 	cubeShader.setInt("material.diffuse", 1);
 	cubeShader.setInt("material.specular", 2);
 	cubeShader.setFloat("material.shininess", 64.0f);
-	cubeShader.setVec3("ambientLight.color", glm::value_ptr(ambientColor));
-	cubeShader.setFloat("ambientLight.intensity", ambientIntensity);
+	cubeShader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));
+	cubeShader.setVec3("dirLight.color", glm::value_ptr(directional.color));
+	cubeShader.setFloat("dirLight.intensity", directional.intensity);
 	for (size_t idx{}; const auto & pointLight : pointLights) {
 		std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
 		cubeShader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
 		cubeShader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
 		cubeShader.setFloat(lightName + ".intensity", pointLight.getIntensity());
 	}
+	cubeShader.setVec3("spotLight.color", glm::value_ptr(spotLight.getColor()));
+	cubeShader.setFloat("spotLight.intensity", spotLight.getIntensity());
+	cubeShader.setFloat("spotLight.cutoff", spotLight.getCutoff());
+	cubeShader.setFloat("spotLight.outerCutoff", spotLight.getOuterCutoff());
+	cubeShader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));
+	cubeShader.setFloat("ambientLight.intensity", ambient.intensity);
 
 	// Set render mode
 	glEnable(GL_DEPTH_TEST);
@@ -218,15 +237,18 @@ int main()
 		// Handle device input
 		processInput(window);
 
+		spotLight.updatePosition(camera.getPosition());
+		spotLight.updateDirection(camera.getDirection());
+
 		// Clear screen
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);	// Background color
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Drawcall logic
-		glm::mat4 projection = camera.getProjectionMatrix();
 		glm::mat4 view = camera.getViewMatrix();
+		glm::mat4 projection = camera.getProjectionMatrix();
 
-		// Draw the light source
+		// Draw the point lights
 		lightShader.use();
 		lightShader.setTransform("view", glm::value_ptr(view));
 		lightShader.setTransform("projection", glm::value_ptr(projection));
@@ -244,15 +266,13 @@ int main()
 		cubeShader.setTransform("view", glm::value_ptr(view));
 		cubeShader.setTransform("projection", glm::value_ptr(projection));
 		cubeShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+		cubeShader.setVec3("spotLight.position", glm::value_ptr(spotLight.getPosition()));
+		cubeShader.setVec3("spotLight.direction", glm::value_ptr(spotLight.getDirection()));
 
 		glBindVertexArray(VAO);
 		for (size_t idx{}; const auto & pos : cubePositions) {
 			glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), pos);
-			cubeModel = glm::rotate(
-				cubeModel,
-				glm::radians(static_cast<float>((glfwGetTime() + randNum[idx++]) * 180.0 / M_PI)),
-				glm::vec3(1.0f, 1.0f, 0.0f)
-			);
+			cubeModel = glm::rotate(cubeModel, static_cast<float>(glfwGetTime() + 5.0 * idx++), glm::vec3(1.0f, 0.3f, 0.5f));
 			cubeShader.setTransform("model", glm::value_ptr(cubeModel));
 			cubeShader.setTransform("invModel", glm::value_ptr(glm::inverse(cubeModel)));
 			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
