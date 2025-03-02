@@ -38,7 +38,7 @@ void main()
 
     vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, lightDir), 0.0);
     vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
-    vec3 direct = (diffuse + specular) * pow(inversesqrt(dist), 2.0) * directLight;
+    vec3 direct = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * directLight;
 
     gl_FragColor = vec4(ambient + direct, 1.0);
 }

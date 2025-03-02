@@ -236,6 +236,7 @@ int main()
 				glm::vec3(1.0f, 1.0f, 0.0f)
 			);
 			cubeShader.setTransform("model", glm::value_ptr(cubeModel));
+			cubeShader.setTransform("invModel", glm::value_ptr(glm::inverse(cubeModel)));
 			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
 			++it;
 		}
