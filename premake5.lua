@@ -26,6 +26,7 @@ project "LearnOpenGL"
 		"%{prj.name}/third-party/glfw/include",
 		"%{prj.name}/third-party/glad/include",
 		"%{prj.name}/third-party/glm",
+		"%{prj.name}/third-party/stb",
 	}
 
 	links {
