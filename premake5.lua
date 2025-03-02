@@ -40,10 +40,10 @@ project "LearnOpenGL"
 
 	postbuildcommands {
 		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src"),
-		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/shaders"),
-		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/textures"),
-		("{COPYFILE} src/shaders ../bin/" .. outputdir .. "/%{prj.name}/src/shaders/"),
-		("{COPYFILE} src/textures ../bin/" .. outputdir .. "/%{prj.name}/src/textures/"),
+		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/Shaders"),
+		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/Textures"),
+		("{COPYFILE} src/Shaders ../bin/" .. outputdir .. "/%{prj.name}/src/Shaders/"),
+		("{COPYFILE} src/Textures ../bin/" .. outputdir .. "/%{prj.name}/src/Textures/"),
 	}
 
 	filter "system:linux"

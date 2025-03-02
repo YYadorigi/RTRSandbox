@@ -2,74 +2,92 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
-#include <direct.h>
-#include <assert.h>
-#include <shader.h>
-#include <texture.h>
-#include <camera.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-const unsigned int SCREEN_WIDTH = 800;
-const unsigned int SCREEN_HEIGHT = 800;
-static Camera camera(
-	glm::vec3(0.0f, 0.0f, 5.0f),
-	glm::vec3(0.0f, 0.0f, -1.0f),
-	glm::vec3(0.0f, 1.0f, 0.0f),
-	45.0f,
-	5.0f,
-	0.05f
-);
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "macro.h"
+#include "shader.h"
+#include "texture.h"
+#include "Viewers/Camera.h"
+#include "Viewers/Light.h"
 
 static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
+Camera camera(
+	glm::vec3(0.0f, 0.0f, 5.0f),	// position
+	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
+	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+	45.0f,	// field of view
+	static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),	// aspect ratio
+	0.1f,	// near plane
+	100.0f,	// far plane
+	5.0f,	// speed
+	0.05f	// sensitivity
+);
+
+Light light(
+	glm::vec3(0.0f, 0.0f, 3.0f),	// position
+	glm::vec3(0.0f),	// target
+	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+	45.0f,	// field of view
+	static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),	// aspect ratio
+	0.1f,	// near plane
+	100.0f,	// far plane
+	glm::vec3(1.0f, 1.0f, 1.0f),	// color
+	1.5f	// intensity
+);
+
+glm::vec3 ambientColor = glm::vec3(1.0f);
+float ambientIntensity = 0.1f;
+
 float cubeMesh[] = {
-	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+	// positions          // normals           // texture coords
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
 
-	-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
 
-	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-	-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 const unsigned int NUM_TRIANGLES = 36;
 
@@ -85,23 +103,6 @@ glm::vec3 cubePositions[] = {
 	glm::vec3(1.5f,  0.2f, -1.5f),
 	glm::vec3(-1.3f,  1.0f, -1.5f),
 };
-
-glm::vec3 cubeColors[] = {
-	glm::vec3(1.0f, 0.5f, 0.1f),
-	glm::vec3(1.0f, 0.5f, 0.2f),
-	glm::vec3(1.0f, 0.5f, 0.3f),
-	glm::vec3(1.0f, 0.5f, 0.4f),
-	glm::vec3(1.0f, 0.5f, 0.5f),
-	glm::vec3(1.0f, 0.5f, 0.6f),
-	glm::vec3(1.0f, 0.5f, 0.7f),
-	glm::vec3(1.0f, 0.5f, 0.8f),
-	glm::vec3(1.0f, 0.5f, 0.9f),
-	glm::vec3(1.0f, 0.5f, 1.0f),
-};
-
-glm::vec3 lightPosition(0.0f, 0.0f, 3.0f);
-glm::vec3 lightColor = glm::vec3(1.0f);
-glm::vec3 lightScale = glm::vec3(0.1f);
 
 void processInput(GLFWwindow* window);
 
@@ -129,15 +130,17 @@ int main()
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), cubeMesh, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);	// vertex coords
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);	// vertex coords
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));	// normal coords
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));	// normal coords
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));	// texture coords
+	glEnableVertexAttribArray(2);
 
 	glBindVertexArray(lightVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), cubeMesh, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // vertex coords
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); // vertex coords
 	glEnableVertexAttribArray(0);
 
 	// Random number generator
@@ -148,19 +151,33 @@ int main()
 	}
 
 	// Load texture
-	// Texture2D containerTex = Texture2D("src/textures/container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
-	// 0, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
-	// Texture2D faceTex = Texture2D("src/textures/awesomeface.png", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR,
-	// 0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+	Texture2D cubeAmbient = Texture2D("src/Textures/container.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
+		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
+	Texture2D cubeDiffuse = Texture2D("src/Textures/container.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
+		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
+	Texture2D cubeSpec = Texture2D("src/Textures/container_spec.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
+		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
 
-	// glActiveTexture(GL_TEXTURE0);
-	// containerTex.bind();
-	// glActiveTexture(GL_TEXTURE1);
-	// faceTex.bind();
+	glActiveTexture(GL_TEXTURE0);
+	cubeAmbient.bind();
+	glActiveTexture(GL_TEXTURE1);
+	cubeDiffuse.bind();
+	glActiveTexture(GL_TEXTURE2);
+	cubeSpec.bind();
 
 	// Load shader program
-	Shader cubeShader = Shader("src/shaders/blinn_phong_vs.glsl", "src/shaders/blinn_phong_fs.glsl");
-	Shader lightShader = Shader("src/shaders/light_vs.glsl", "src/shaders/light_fs.glsl");
+	Shader cubeShader = Shader("src/Shaders/blinn_phong_vs.glsl", "src/Shaders/blinn_phong_fs.glsl");
+	Shader lightShader = Shader("src/Shaders/light_vs.glsl", "src/Shaders/light_fs.glsl");
+
+	cubeShader.use();
+	cubeShader.setInt("material.ambient", 0);
+	cubeShader.setInt("material.diffuse", 1);
+	cubeShader.setInt("material.specular", 2);
+	cubeShader.setFloat("material.shininess", 64.0f);
+	cubeShader.setVec3("lighting.ambientColor", glm::value_ptr(ambientColor));
+	cubeShader.setFloat("lighting.ambientIntensity", ambientIntensity);
+	cubeShader.setVec3("lighting.directColor", glm::value_ptr(light.getColor()));
+	cubeShader.setFloat("lighting.directIntensity", light.getIntensity());
 
 	// Set render mode
 	glEnable(GL_DEPTH_TEST);
@@ -172,8 +189,12 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		lightPosition.x = 3.0f * sin(static_cast<float>(glfwGetTime()));
-		lightPosition.z = 3.0f * cos(static_cast<float>(glfwGetTime()));
+		light.updatePosition(
+			3.0f * sin(static_cast<float>(glfwGetTime())),
+			light.getPosition().y,
+			3.0f * cos(static_cast<float>(glfwGetTime()))
+		);
+		light.updateDirection(glm::vec3(0.0f));
 
 		// Handle device input
 		processInput(window);
@@ -183,18 +204,12 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Draw
-		glm::mat4 projection = glm::perspective(
-			glm::radians(camera.getFov()),
-			static_cast<float>(SCREEN_WIDTH / SCREEN_HEIGHT),
-			0.1f,
-			100.0f
-		);
-
+		glm::mat4 projection = camera.getProjectionMatrix();
 		glm::mat4 view = camera.getViewMatrix();
 
 		// Draw the light source
-		glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), lightPosition);
-		lightModel = glm::scale(lightModel, lightScale);
+		glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), light.getPosition());
+		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
 
 		lightShader.use();
 		lightShader.setTransform("model", glm::value_ptr(lightModel));
@@ -206,11 +221,7 @@ int main()
 
 		// Draw the cubes
 		cubeShader.use();
-		cubeShader.setVec3("ambientColor", glm::value_ptr(glm::vec3(1.0f)));
-		cubeShader.setFloat("ambientIntensity", 0.05f);
-		cubeShader.setVec3("lightColor", glm::value_ptr(lightColor));
-		cubeShader.setFloat("lightIntensity", 1.0f);
-		cubeShader.setVec3("lightPos", glm::value_ptr(lightPosition));
+		cubeShader.setVec3("lighting.pos", glm::value_ptr(light.getPosition()));
 		cubeShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 		cubeShader.setTransform("view", glm::value_ptr(view));
 		cubeShader.setTransform("projection", glm::value_ptr(projection));
@@ -224,7 +235,6 @@ int main()
 				glm::radians(static_cast<float>((glfwGetTime() + *it) * 180.0 / M_PI)),
 				glm::vec3(1.0f, 1.0f, 0.0f)
 			);
-			cubeShader.setVec3("surfaceColor", glm::value_ptr(cubeColors[static_cast<int>(*it)]));
 			cubeShader.setTransform("model", glm::value_ptr(cubeModel));
 			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
 			++it;

@@ -1,16 +1,13 @@
-#include <camera.h>
+#include "camera.h"
 
-Camera::Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov, float speed, float sensitivity)
+Camera::Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov, float aspectRatio, float near, float far,
+	float speed, float sensitivity) : View(position, direction, up, fov, aspectRatio, near, far)
 {
-	this->position = position;
-	this->direction = direction;
-	this->initialDirection = direction;
-	this->up = up;
-	this->fov = fov;
 	this->speed = speed;
 	this->sensitivity = sensitivity;
-	this->pitch = 0.0f;
-	this->yaw = 0.0f;
+	initialDirection = direction;
+	pitch = 0.0f;
+	yaw = 0.0f;
 }
 
 void Camera::updateFov(float offset)
