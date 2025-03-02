@@ -1,14 +1,24 @@
 #include "View.h"
 
+glm::mat4 Frustum::getProjectionMatrix() const
+{
+	return glm::perspective(fov, aspectRatio, near, far);
+}
+
 View::View(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov, float aspectRatio, float near, float far)
 {
 	this->position = position;
 	this->direction = direction;
 	this->up = up;
-	this->fov = fov;
-	this->aspectRatio = aspectRatio;
-	this->near = near;
-	this->far = far;
+	this->frustum = Frustum{ fov, aspectRatio, near, far };
+}
+
+View::View(glm::vec3 position, glm::vec3 direction, glm::vec3 up, Frustum frustum)
+{
+	this->position = position;
+	this->direction = direction;
+	this->up = up;
+	this->frustum = frustum;
 }
 
 glm::mat4 View::getViewMatrix() const
@@ -18,5 +28,5 @@ glm::mat4 View::getViewMatrix() const
 
 glm::mat4 View::getProjectionMatrix() const
 {
-	return glm::perspective(fov, aspectRatio, near, far);
+	return frustum.getProjectionMatrix();
 }

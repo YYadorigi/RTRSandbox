@@ -7,38 +7,109 @@ struct Material
     float shininess;
 };
 
-struct Lighting 
+struct DirLight 
 {
-    vec3 ambientColor;
-    float ambientIntensity;
-    vec3 directColor;
-    float directIntensity;
-    vec3 pos;
+    vec3 direction;
+	
+    vec3 color;
+    float intensity;
 };
+
+struct PointLight 
+{
+    vec3 position;
+	
+    vec3 color;
+    float intensity;
+};
+
+struct SpotLight 
+{
+    vec3 position;
+    vec3 direction;
+    float cutOff;
+    float outerCutOff;    
+    
+    vec3 color;
+    float intensity;
+};
+
+struct AmbientLight 
+{
+    vec3 color;
+    float intensity;
+};
+
+#define NR_POINT_LIGHTS 4
 
 in vec3 fragPos;
 in vec3 normal;
 in vec2 texCoords;
 
-uniform Material material;
-uniform Lighting lighting;
 uniform vec3 viewPos;
+uniform Material material;
+uniform DirLight dirLight;
+uniform PointLight pointLights[NR_POINT_LIGHTS];
+uniform SpotLight spotLight;
+uniform AmbientLight ambientLight;
+
+// Function prototypes
+vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir);
+vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
-    vec3 ambientLight = lighting.ambientIntensity * lighting.ambientColor;
-    vec3 directLight = lighting.directIntensity * lighting.directColor;
-
-    vec3 lightDir = normalize(lighting.pos - fragPos);
     vec3 viewDir = normalize(viewPos - fragPos);
-    vec3 halfDir = normalize(lightDir + viewDir);
-    float dist = length(lighting.pos - fragPos);
+    
+    vec3 result = vec3(0.0);
 
-    vec3 ambient = texture(material.ambient, texCoords).rgb * ambientLight;
+    // result += shadingDirLight(dirLight, normal, viewDir);
+    
+    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+        result += shadingPointLight(pointLights[i], normal, fragPos, viewDir);    
+    
+    // result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
+    
+    result += texture(material.ambient, texCoords).rgb * ambientLight.color * ambientLight.intensity;
+    
+    gl_FragColor = vec4(result, 1.0);
+}
+
+// Function definitions
+vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir)
+{
+    vec3 halfDir = normalize(light.direction + viewDir);
+
+    vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, light.direction), 0.0);
+    vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    return (diffuse + specular) * light.color * light.intensity;
+}
+
+vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+{
+    vec3 lightDir = normalize(light.position - fragPos);
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float dist = length(light.position - fragPos);
 
     vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, lightDir), 0.0);
     vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
-    vec3 direct = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * directLight;
+    return (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
+}
 
-    gl_FragColor = vec4(ambient + direct, 1.0);
+vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+{
+    vec3 lightDir = normalize(light.position - fragPos);
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float dist = length(light.position - fragPos);
+
+    vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, lightDir), 0.0);
+    vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 original = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
+
+    float theta = dot(lightDir, normalize(-light.direction)); 
+    float epsilon = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+
+    return original * intensity;
 }

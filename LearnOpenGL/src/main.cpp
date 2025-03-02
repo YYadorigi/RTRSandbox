@@ -8,8 +8,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "macro.h"
-#include "shader.h"
-#include "texture.h"
+#include "Shader.h"
+#include "Texture.h"
 #include "Viewers/Camera.h"
 #include "Viewers/Light.h"
 
@@ -18,29 +18,51 @@ static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
+Frustum frustum(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+
 Camera camera(
 	glm::vec3(0.0f, 0.0f, 5.0f),	// position
 	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-	45.0f,	// field of view
-	static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),	// aspect ratio
-	0.1f,	// near plane
-	100.0f,	// far plane
+	frustum,
 	5.0f,	// speed
 	0.05f	// sensitivity
 );
 
-Light light(
-	glm::vec3(0.0f, 0.0f, 3.0f),	// position
-	glm::vec3(0.0f),	// target
-	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-	45.0f,	// field of view
-	static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),	// aspect ratio
-	0.1f,	// near plane
-	100.0f,	// far plane
-	glm::vec3(1.0f, 1.0f, 1.0f),	// color
-	1.5f	// intensity
-);
+Light pointLights[] = {
+	Light(
+		glm::vec3(0.7f, 0.2f, 2.0f),	// position
+		glm::vec3(0.0f),				// target
+		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+		frustum,
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		1.0f	// intensity
+	),
+	Light(
+		glm::vec3(2.3f, -3.3f, -4.0f),	// position
+		glm::vec3(0.0f),				// target
+		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+		frustum,
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		1.0f	// intensity
+	),
+	Light(
+		glm::vec3(-4.0f, 2.0f, -12.0f),	// position
+		glm::vec3(0.0f),				// target
+		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+		frustum,
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		1.0f	// intensity
+	),
+	Light(
+		glm::vec3(0.0f, 0.0f, -3.0f),	// position
+		glm::vec3(0.0f),				// target
+		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+		frustum,
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		1.0f	// intensity
+	)
+};
 
 glm::vec3 ambientColor = glm::vec3(1.0f);
 float ambientIntensity = 0.1f;
@@ -174,10 +196,14 @@ int main()
 	cubeShader.setInt("material.diffuse", 1);
 	cubeShader.setInt("material.specular", 2);
 	cubeShader.setFloat("material.shininess", 64.0f);
-	cubeShader.setVec3("lighting.ambientColor", glm::value_ptr(ambientColor));
-	cubeShader.setFloat("lighting.ambientIntensity", ambientIntensity);
-	cubeShader.setVec3("lighting.directColor", glm::value_ptr(light.getColor()));
-	cubeShader.setFloat("lighting.directIntensity", light.getIntensity());
+	cubeShader.setVec3("ambientLight.color", glm::value_ptr(ambientColor));
+	cubeShader.setFloat("ambientLight.intensity", ambientIntensity);
+	for (size_t idx{}; const auto & pointLight : pointLights) {
+		std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
+		cubeShader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
+		cubeShader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
+		cubeShader.setFloat(lightName + ".intensity", pointLight.getIntensity());
+	}
 
 	// Set render mode
 	glEnable(GL_DEPTH_TEST);
@@ -189,13 +215,6 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		light.updatePosition(
-			3.0f * sin(static_cast<float>(glfwGetTime())),
-			light.getPosition().y,
-			3.0f * cos(static_cast<float>(glfwGetTime()))
-		);
-		light.updateDirection(glm::vec3(0.0f));
-
 		// Handle device input
 		processInput(window);
 
@@ -203,42 +222,40 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);	// Background color
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Draw
+		// Drawcall logic
 		glm::mat4 projection = camera.getProjectionMatrix();
 		glm::mat4 view = camera.getViewMatrix();
 
 		// Draw the light source
-		glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), light.getPosition());
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-
 		lightShader.use();
-		lightShader.setTransform("model", glm::value_ptr(lightModel));
 		lightShader.setTransform("view", glm::value_ptr(view));
 		lightShader.setTransform("projection", glm::value_ptr(projection));
 
 		glBindVertexArray(lightVAO);
-		glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
+		for (const auto& pointLight : pointLights) {
+			glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), pointLight.getPosition());
+			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+			lightShader.setTransform("model", glm::value_ptr(lightModel));
+			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
+		};
 
 		// Draw the cubes
 		cubeShader.use();
-		cubeShader.setVec3("lighting.pos", glm::value_ptr(light.getPosition()));
-		cubeShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 		cubeShader.setTransform("view", glm::value_ptr(view));
 		cubeShader.setTransform("projection", glm::value_ptr(projection));
+		cubeShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
 		glBindVertexArray(VAO);
-		auto it = randNum.begin();
-		for (auto pos : cubePositions) {
+		for (size_t idx{}; const auto & pos : cubePositions) {
 			glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), pos);
 			cubeModel = glm::rotate(
 				cubeModel,
-				glm::radians(static_cast<float>((glfwGetTime() + *it) * 180.0 / M_PI)),
+				glm::radians(static_cast<float>((glfwGetTime() + randNum[idx++]) * 180.0 / M_PI)),
 				glm::vec3(1.0f, 1.0f, 0.0f)
 			);
 			cubeShader.setTransform("model", glm::value_ptr(cubeModel));
 			cubeShader.setTransform("invModel", glm::value_ptr(glm::inverse(cubeModel)));
 			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
-			++it;
 		}
 
 		glfwSwapBuffers(window);

@@ -1,4 +1,4 @@
-#include <shader.h>
+#include "shader.h"
 
 Shader::Shader(const char* vsPath, const char* fsPath)
 {

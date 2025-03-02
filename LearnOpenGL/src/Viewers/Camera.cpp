@@ -10,13 +10,23 @@ Camera::Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov,
 	yaw = 0.0f;
 }
 
+Camera::Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up, Frustum frustum, float speed, float sensitivity) :
+	View(position, direction, up, frustum)
+{
+	this->speed = speed;
+	this->sensitivity = sensitivity;
+	initialDirection = direction;
+	pitch = 0.0f;
+	yaw = 0.0f;
+}
+
 void Camera::updateFov(float offset)
 {
-	fov -= offset;
-	if (fov < 1.0f)
-		fov = 1.0f;
-	if (fov > 60.0f)
-		fov = 60.0f;
+	frustum.fov -= offset;
+	if (frustum.fov < 1.0f)
+		frustum.fov = 1.0f;
+	if (frustum.fov > 60.0f)
+		frustum.fov = 60.0f;
 }
 
 void Camera::updatePitchYaw(float offsetX, float offsetY)

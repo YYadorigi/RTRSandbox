@@ -14,6 +14,7 @@ class Light : public View
 public:
 	Light(glm::vec3 position, glm::vec3 target, glm::vec3 up, float fov, float aspectRatio, float near, float far,
 		glm::vec3 color, float intensity);
+	Light(glm::vec3 position, glm::vec3 target, glm::vec3 up, Frustum frustum, glm::vec3 color, float intensity);
 	inline glm::vec3 getColor() const { return color; }
 	inline float getIntensity() const { return intensity; }
 	inline void updatePosition(float x, float y, float z) { position = glm::vec3(x, y, z); }
@@ -36,6 +37,8 @@ class SpotLight : public Light
 public:
 	SpotLight(glm::vec3 position, glm::vec3 target, glm::vec3 up, float fov, float aspectRatio, float near, float far,
 		glm::vec3 color, float intensity, float cutoff, float outerCutoff);
+	SpotLight(glm::vec3 position, glm::vec3 target, glm::vec3 up, Frustum frustum, glm::vec3 color, float intensity,
+		float cutoff, float outerCutoff);
 	inline float getCutoff() const { return cutoff; }
 	inline float getOuterCutoff() const { return outerCutoff; }
 protected:
