@@ -4,13 +4,26 @@ workspace "LearnOpenGL"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"	--e.g., Debug-Windows-x64
 
-include "LearnOpenGL/third-party/glfw/premake5.lua"
 include "LearnOpenGL/third-party/glad/premake5.lua"
+
+glfwdir = "LearnOpenGL/third-party/glfw"
+os.execute(
+	"cmake -S " .. glfwdir .. " -B " .. glfwdir .. "/build" 
+	.. " -D " .. "GLFW_BUILD_EXAMPLES=OFF" 
+	.. " -D " .. "GLFW_BUILD_TESTS=OFF" 
+	.. " -D " .. "GLFW_BUILD_DOCS=OFF" 
+	.. " -D " .. "USE_MSVC_RUNTIME_LIBRARY_DLL=OFF"
+)
+os.execute("cmake --build " .. glfwdir .. "/build")
 
 project "LearnOpenGL"
 	location "LearnOpenGL"
 	kind "ConsoleApp"
 	language "C++"
+	cdialect "Default"
+	cppdialect "C++20"
+	systemversion "latest"
+	staticruntime "On"
 
 	objdir ("bin/tmp/" .. outputdir .. "/%{prj.name}")
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -22,16 +35,19 @@ project "LearnOpenGL"
 
 	includedirs {
 		"%{prj.name}/src",
-		"%{prj.name}/third-party",
 		"%{prj.name}/third-party/glfw/include",
 		"%{prj.name}/third-party/glad/include",
 		"%{prj.name}/third-party/glm",
 		"%{prj.name}/third-party/stb",
 	}
 
+	libdirs {
+		"%{prj.name}/third-party/glfw/build/src/Debug",
+	}
+
 	links {
-		"glfw",
 		"glad",
+		"glfw3.lib",
 		"opengl32.lib",
 	}
 
@@ -46,17 +62,6 @@ project "LearnOpenGL"
 		("{COPYFILE} src/Shaders ../bin/" .. outputdir .. "/%{prj.name}/src/Shaders/"),
 		("{COPYFILE} src/Textures ../bin/" .. outputdir .. "/%{prj.name}/src/Textures/"),
 	}
-
-	filter "system:linux"
-		pic "On"
-		cppdialect "C++20"
-		staticruntime "On"
-		systemversion "latest"
-
-	filter "system:windows"
-		cppdialect "C++20"
-		staticruntime "On"
-		systemversion "latest"
 
 	filter "configurations:Debug"
 		runtime "Debug"

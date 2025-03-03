@@ -1,6 +1,9 @@
 project "glad"
 	kind "StaticLib"
 	language "C"
+	cdialect "Default"
+	systemversion "latest"
+	staticruntime "On"
 
 	objdir ("bin/tmp/" .. outputdir .. "/%{prj.name}")
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -18,17 +21,6 @@ project "glad"
 	buildoptions {
 		"/utf-8",
 	}
-
-	filter "system:linux"
-		pic "On"
-		cdialect "Default"
-		staticruntime "On"
-		systemversion "latest"
-
-	filter "system:windows"
-		cdialect "Default"
-		staticruntime "On"
-		systemversion "latest"
 
 	filter "configurations:Debug"
 		runtime "Debug"
