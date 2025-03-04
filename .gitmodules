@@ -1,9 +1,0 @@
-[submodule "LearnOpenGL/vendor/stb"]
-	path = LearnOpenGL/vendor/stb
-	url = git@github.com:nothings/stb.git
-[submodule "LearnOpenGL/vendor/glm"]
-	path = LearnOpenGL/vendor/glm
-	url = git@github.com:g-truc/glm.git
-[submodule "LearnOpenGL/vendor/glfw"]
-	path = LearnOpenGL/vendor/glfw
-	url = git@github.com:glfw/glfw.git
