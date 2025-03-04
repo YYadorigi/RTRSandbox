@@ -2,29 +2,28 @@ workspace "LearnOpenGL"
 	architecture "x64"
 	configurations { "Debug", "Release" }
 
-binarydir = "bin"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"	--e.g., Debug-Windows-x64
 
+-- GLAD --
 include "vendor/glad/premake5.lua"
 
-glfwdir = "vendor/glfw"
+-- GLFW --
 os.execute(
-	"cmake -S " .. glfwdir .. " -B " .. glfwdir .. "/build" 
+	"cmake -S vendor/glfw -B vendor/glfw/build"
 	.. " -D " .. "GLFW_BUILD_EXAMPLES=OFF" 
 	.. " -D " .. "GLFW_BUILD_TESTS=OFF" 
 	.. " -D " .. "GLFW_BUILD_DOCS=OFF" 
 	.. " -D " .. "USE_MSVC_RUNTIME_LIBRARY_DLL=OFF"
 )
-os.execute("cmake --build " .. glfwdir .. "/build")
 
-assimpdir = "vendor/assimp"
+-- Assimp --
 os.execute(
-	"cmake -S " .. assimpdir .. " -B " .. assimpdir .. "/build"
+	"cmake -S vendor/assimp -B vendor/assimp/build"
 	.. " -D " .. "ASSIMP_BUILD_ASSIMP_TOOLS=OFF"
 	.. " -D " .. "BUILD_SHARED_LIBS=ON"
 )
-os.execute("cmake --build " .. assimpdir .. "/build")
 
+-- Build projects --
 project "FirstScene"
 	location "FirstScene"
 	kind "ConsoleApp"
@@ -34,8 +33,8 @@ project "FirstScene"
 	systemversion "latest"
 	staticruntime "On"
 
-	objdir (binarydir .. "/tmp/" .. outputdir .. "/%{prj.name}")
-	targetdir (binarydir .. "/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin/tmp/" .. outputdir .. "/%{prj.name}")
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 
 	files {
 		"%{prj.name}/Shader/**.h",
@@ -44,6 +43,8 @@ project "FirstScene"
 		"%{prj.name}/Texture/**.cpp",
 		"%{prj.name}/Viewer/**.h",
 		"%{prj.name}/Viewer/**.cpp",
+		"%{prj.name}/Model/**.h",
+		"%{prj.name}/Model/**.cpp",
 		"%{prj.name}/macro.h",
 		"%{prj.name}/main.cpp",
 	}
@@ -55,36 +56,54 @@ project "FirstScene"
 		"vendor/glm",
 		"vendor/stb",
 		"vendor/assimp/include",
+		"vendor/assimp/build/include",
 	}
 
 	libdirs {
-		"vendor/glfw/build/src/Debug",
-		"vendor/assimp/build/bin/Debug",
-	}
-
-	links {
-		"glad",
-		"glfw3.lib",
-		"assimp-vc143-mtd.dll",
-		"opengl32.lib",
+		"vendor/glfw/build/src/%{cfg.buildcfg}",
+		"vendor/assimp/build/bin/%{cfg.buildcfg}",
+		"vendor/assimp/build/lib/%{cfg.buildcfg}",
 	}
 
 	buildoptions {
 		"/utf-8",
 	}
 
-	postbuildcommands {
-		("{MKDIR} ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets"),
-		("{MKDIR} ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/shaders"),
-		("{MKDIR} ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/textures"),
-		("{COPYFILE} assets/shaders ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/shaders"),
-		("{COPYFILE} assets/textures ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/textures"),
+	buildcommands {
+		"cmake --build vendor/glfw/build --config %{cfg.buildcfg}",
+		"cmake --build vendor/assimp/build --config %{cfg.buildcfg}",
 	}
 
 	filter "configurations:Debug"
 		runtime "Debug"
 		symbols "On"
 
+		links {
+			"glad",
+			"glfw3",
+			"assimp-vc143-mtd",
+			"opengl32",
+		}
+		
+		postbuildcommands {
+			("{COPYFILE} ../vendor/assimp/build/bin/%{cfg.buildcfg}/assimp-vc143-mtd.dll ../bin/" .. outputdir .. "/%{prj.name}"),
+			("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/assets"),
+			("{COPYDIR} assets ../bin/" .. outputdir .. "/%{prj.name}/assets"),
+		}
+
 	filter "configurations:Release"
 		runtime "Release"
 		optimize "On"
+
+		links {
+			"glad",
+			"glfw3",
+			"assimp-vc143-mt",
+			"opengl32",
+		}
+
+		postbuildcommands {
+			("{COPYFILE} ../vendor/assimp/build/bin/%{cfg.buildcfg}/assimp-vc143-mt.dll ../bin/" .. outputdir .. "/%{prj.name}"),
+			("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/assets"),
+			("{COPYDIR} assets ../bin/" .. outputdir .. "/%{prj.name}/assets"),
+		}

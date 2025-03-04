@@ -12,6 +12,7 @@
 #include "Texture/Texture.h"
 #include "Viewer/Camera.h"
 #include "Viewer/Light.h"
+#include "Model/Model.h"
 
 static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
@@ -86,65 +87,6 @@ SpotLight spotLight(
 	glm::cos(glm::radians(17.5f))	// outer cutoff
 );
 
-float cubeMesh[] = {
-	// positions          // normals           // texture coords
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
-};
-const unsigned int NUM_TRIANGLES = 36;
-
-glm::vec3 cubePositions[] = {
-	glm::vec3(0.0f,  0.0f,  0.0f),
-	glm::vec3(2.0f,  5.0f, -15.0f),
-	glm::vec3(-1.5f, -2.2f, -2.5f),
-	glm::vec3(-3.8f, -2.0f, -12.3f),
-	glm::vec3(2.4f, -0.4f, -3.5f),
-	glm::vec3(-1.7f,  3.0f, -7.5f),
-	glm::vec3(1.3f, -2.0f, -2.5f),
-	glm::vec3(1.5f,  2.0f, -2.5f),
-	glm::vec3(1.5f,  0.2f, -1.5f),
-	glm::vec3(-1.3f,  1.0f, -1.5f),
-};
-
 void processInput(GLFWwindow* window);
 
 static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile);
@@ -162,42 +104,8 @@ int main()
 		return -1;
 	}
 
-	// Load vertex data
-	unsigned int VAO, lightVAO, VBO;
-	glGenVertexArrays(1, &VAO);
-	glGenVertexArrays(1, &lightVAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), cubeMesh, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);	// vertex coords
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));	// normal coords
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));	// texture coords
-	glEnableVertexAttribArray(2);
-
-	glBindVertexArray(lightVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeMesh), cubeMesh, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); // vertex coords
-	glEnableVertexAttribArray(0);
-
-	// Load texture
-	Texture2D cubeAmbient = Texture2D("assets/textures/container.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
-	Texture2D cubeDiffuse = Texture2D("assets/textures/container.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
-	Texture2D cubeSpec = Texture2D("assets/textures/container_spec.png", GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-		GL_LINEAR, 0, GL_UNSIGNED_BYTE);
-
-	glActiveTexture(GL_TEXTURE0);
-	cubeAmbient.bind();
-	glActiveTexture(GL_TEXTURE1);
-	cubeDiffuse.bind();
-	glActiveTexture(GL_TEXTURE2);
-	cubeSpec.bind();
+	// Load model
+	Model ourModel(static_cast<std::string>("assets/objects/backpack/backpack.obj"));
 
 	// Load shader program
 	Shader cubeShader = Shader("assets/shaders/blinn_phong.vert", "assets/shaders/blinn_phong.frag");
@@ -250,16 +158,11 @@ int main()
 
 		// Draw the point lights
 		lightShader.use();
+		lightShader.setTransform("model", glm::value_ptr(glm::mat4(1.0f)));
 		lightShader.setTransform("view", glm::value_ptr(view));
 		lightShader.setTransform("projection", glm::value_ptr(projection));
 
-		glBindVertexArray(lightVAO);
-		for (const auto& pointLight : pointLights) {
-			glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), pointLight.getPosition());
-			lightModel = glm::scale(lightModel, glm::vec3(0.2f));
-			lightShader.setTransform("model", glm::value_ptr(lightModel));
-			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
-		};
+		ourModel.Draw(lightShader);
 
 		// Draw the cubes
 		cubeShader.use();
@@ -269,23 +172,9 @@ int main()
 		cubeShader.setVec3("spotLight.position", glm::value_ptr(spotLight.getPosition()));
 		cubeShader.setVec3("spotLight.direction", glm::value_ptr(spotLight.getDirection()));
 
-		glBindVertexArray(VAO);
-		for (size_t idx{}; const auto & pos : cubePositions) {
-			glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), pos);
-			cubeModel = glm::rotate(cubeModel, static_cast<float>(glfwGetTime() + 5.0 * idx++), glm::vec3(1.0f, 0.3f, 0.5f));
-			cubeShader.setTransform("model", glm::value_ptr(cubeModel));
-			cubeShader.setTransform("invModel", glm::value_ptr(glm::inverse(cubeModel)));
-			glDrawArrays(GL_TRIANGLES, 0, NUM_TRIANGLES);
-		}
-
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
-	// Clean up data
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteVertexArrays(1, &lightVAO);
-	glDeleteBuffers(1, &VBO);
 
 	// Destroy window
 	glfwDestroyWindow(window);

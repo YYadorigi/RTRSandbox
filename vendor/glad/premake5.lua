@@ -5,8 +5,8 @@ project "glad"
 	systemversion "latest"
 	staticruntime "On"
 
-	objdir (binarydir .. "/tmp/" .. outputdir .. "/%{prj.name}")
-	targetdir (binarydir .. "/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin/tmp/" .. outputdir .. "/%{prj.name}")
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 
 	files {
 		"include/glad/glad.h",

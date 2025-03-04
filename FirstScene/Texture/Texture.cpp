@@ -3,12 +3,12 @@
 #include "texture.h"
 
 Texture2D::Texture2D(const char* path, unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter,
-	unsigned int mipmapLevel, unsigned int sourceDataType)
+	unsigned int mipmapLevel, unsigned int sourceDataType, std::string type)
 {
 	glGenTextures(1, &ID);
+	this->type = type;
 
 	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(true);
 	unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
 	if (data) {
 		GLenum format = GL_RGB;
@@ -41,26 +41,4 @@ Texture2D::Texture2D(const char* path, unsigned int wrapS, unsigned int wrapT, u
 Texture2D::~Texture2D()
 {
 	glDeleteTextures(1, &ID);
-}
-
-Texture2D::Texture2D(const Texture2D& other)
-{
-	ID = other.ID;
-}
-
-Texture2D& Texture2D::operator=(const Texture2D& other)
-{
-	this->ID = other.ID;
-	return *this;
-}
-
-Texture2D::Texture2D(Texture2D&& other) noexcept
-{
-	ID = other.ID;
-}
-
-Texture2D& Texture2D::operator=(Texture2D&& other) noexcept
-{
-	this->ID = other.ID;
-	return *this;
 }
