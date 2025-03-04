@@ -17,6 +17,14 @@ os.execute(
 )
 os.execute("cmake --build " .. glfwdir .. "/build")
 
+assimpdir = "vendor/assimp"
+os.execute(
+	"cmake -S " .. assimpdir .. " -B " .. assimpdir .. "/build"
+	.. " -D " .. "ASSIMP_BUILD_ASSIMP_TOOLS=OFF"
+	.. " -D " .. "BUILD_SHARED_LIBS=ON"
+)
+os.execute("cmake --build " .. assimpdir .. "/build")
+
 project "FirstScene"
 	location "FirstScene"
 	kind "ConsoleApp"
@@ -42,19 +50,22 @@ project "FirstScene"
 
 	includedirs {
 		"%{prj.name}",
-		"vendor/glfw/include",
 		"vendor/glad/include",
+		"vendor/glfw/include",
 		"vendor/glm",
 		"vendor/stb",
+		"vendor/assimp/include",
 	}
 
 	libdirs {
 		"vendor/glfw/build/src/Debug",
+		"vendor/assimp/build/bin/Debug",
 	}
 
 	links {
 		"glad",
 		"glfw3.lib",
+		"assimp-vc143-mtd.dll",
 		"opengl32.lib",
 	}
 
