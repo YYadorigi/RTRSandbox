@@ -2,11 +2,12 @@ workspace "LearnOpenGL"
 	architecture "x64"
 	configurations { "Debug", "Release" }
 
+binarydir = "bin"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"	--e.g., Debug-Windows-x64
 
-include "LearnOpenGL/third-party/glad/premake5.lua"
+include "vendor/glad/premake5.lua"
 
-glfwdir = "LearnOpenGL/third-party/glfw"
+glfwdir = "vendor/glfw"
 os.execute(
 	"cmake -S " .. glfwdir .. " -B " .. glfwdir .. "/build" 
 	.. " -D " .. "GLFW_BUILD_EXAMPLES=OFF" 
@@ -16,8 +17,8 @@ os.execute(
 )
 os.execute("cmake --build " .. glfwdir .. "/build")
 
-project "LearnOpenGL"
-	location "LearnOpenGL"
+project "FirstScene"
+	location "FirstScene"
 	kind "ConsoleApp"
 	language "C++"
 	cdialect "Default"
@@ -25,24 +26,30 @@ project "LearnOpenGL"
 	systemversion "latest"
 	staticruntime "On"
 
-	objdir ("bin/tmp/" .. outputdir .. "/%{prj.name}")
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir (binarydir .. "/tmp/" .. outputdir .. "/%{prj.name}")
+	targetdir (binarydir .. "/" .. outputdir .. "/%{prj.name}")
 
 	files {
-		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/Shader/**.h",
+		"%{prj.name}/Shader/**.cpp",
+		"%{prj.name}/Texture/**.h",
+		"%{prj.name}/Texture/**.cpp",
+		"%{prj.name}/Viewer/**.h",
+		"%{prj.name}/Viewer/**.cpp",
+		"%{prj.name}/macro.h",
+		"%{prj.name}/main.cpp",
 	}
 
 	includedirs {
-		"%{prj.name}/src",
-		"%{prj.name}/third-party/glfw/include",
-		"%{prj.name}/third-party/glad/include",
-		"%{prj.name}/third-party/glm",
-		"%{prj.name}/third-party/stb",
+		"%{prj.name}",
+		"vendor/glfw/include",
+		"vendor/glad/include",
+		"vendor/glm",
+		"vendor/stb",
 	}
 
 	libdirs {
-		"%{prj.name}/third-party/glfw/build/src/Debug",
+		"vendor/glfw/build/src/Debug",
 	}
 
 	links {
@@ -56,11 +63,11 @@ project "LearnOpenGL"
 	}
 
 	postbuildcommands {
-		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src"),
-		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/Shaders"),
-		("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/src/Textures"),
-		("{COPYFILE} src/Shaders ../bin/" .. outputdir .. "/%{prj.name}/src/Shaders/"),
-		("{COPYFILE} src/Textures ../bin/" .. outputdir .. "/%{prj.name}/src/Textures/"),
+		("{MKDIR} ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets"),
+		("{MKDIR} ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/shaders"),
+		("{MKDIR} ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/textures"),
+		("{COPYFILE} assets/shaders ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/shaders"),
+		("{COPYFILE} assets/textures ../" .. binarydir .. "/" .. outputdir .. "/%{prj.name}/assets/textures"),
 	}
 
 	filter "configurations:Debug"

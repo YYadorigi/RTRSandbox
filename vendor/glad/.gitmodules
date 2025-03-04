@@ -1,0 +1,6 @@
+[submodule "LearnOpenGL/vendor/stb"]
+	path = LearnOpenGL/vendor/stb
+[submodule "LearnOpenGL/vendor/glm"]
+	path = LearnOpenGL/vendor/glm
+[submodule "LearnOpenGL/vendor/glfw"]
+	path = LearnOpenGL/vendor/glfw
