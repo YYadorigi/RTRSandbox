@@ -45,7 +45,7 @@ struct AmbientLight
     float intensity;
 };
 
-#define NR_POINT_LIGHTS 4
+#define MAX_POINT_LIGHTS 4
 
 in vec3 fragPos;
 in vec3 normal;
@@ -54,7 +54,7 @@ in vec2 texCoords;
 uniform vec3 viewPos;
 uniform Material material;
 uniform DirLight dirLight;
-uniform PointLight pointLights[NR_POINT_LIGHTS];
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLight;
 uniform AmbientLight ambientLight;
 
@@ -71,7 +71,7 @@ void main()
 
     result += shadingDirLight(dirLight, normal, viewDir);
     
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+    for(int i = 0; i < MAX_POINT_LIGHTS; i++)
     {
         result += shadingPointLight(pointLights[i], normal, fragPos, viewDir);  
     }

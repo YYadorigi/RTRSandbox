@@ -29,35 +29,27 @@ Camera camera(
 
 Light pointLights[] = {
 	Light(
-		glm::vec3(0.7f, 0.2f, 2.0f),	// position
+		glm::vec3(1.0f, 1.0f, 1.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		glm::vec3(1.0f, 0.5f, 1.0f),	// color
 		1.0f	// intensity
 	),
 	Light(
-		glm::vec3(2.3f, -3.3f, -4.0f),	// position
+		glm::vec3(-1.0f, -1.0f, -2.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		glm::vec3(1.0f, 1.0f, 0.5f),	// color
 		1.0f	// intensity
 	),
 	Light(
-		glm::vec3(-4.0f, 2.0f, -12.0f),	// position
+		glm::vec3(-1.0f, 1.0f, 1.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		1.0f	// intensity
-	),
-	Light(
-		glm::vec3(0.0f, 0.0f, -3.0f),	// position
-		glm::vec3(0.0f),				// target
-		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-		frustum,
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		glm::vec3(0.5f, 1.0f, 1.0f),	// color
 		1.0f	// intensity
 	)
 };
@@ -70,7 +62,7 @@ AmbientLight ambient = {
 DirectionalLight directional = {
 	glm::vec3(-0.2f, -1.0f, -0.3f),	// direction
 	glm::vec3(1.0f),	// color
-	0.5f,	// intensity
+	0.25f,	// intensity
 };
 
 SpotLight spotLight(
@@ -79,10 +71,11 @@ SpotLight spotLight(
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 	frustum,
 	glm::vec3(1.0f, 1.0f, 1.0f),	// color
-	2.0f,	// intensity
+	1.0f,	// intensity
 	glm::cos(glm::radians(12.5f)),	// cutoff
 	glm::cos(glm::radians(17.5f))	// outer cutoff
 );
+bool spotLightActive = true;
 
 void processInput(GLFWwindow* window);
 
@@ -120,7 +113,6 @@ int main()
 	}
 
 	shader.setVec3("spotLight.color", glm::value_ptr(spotLight.getColor()));		// spot light
-	shader.setFloat("spotLight.intensity", spotLight.getIntensity());
 	shader.setFloat("spotLight.cutoff", spotLight.getCutoff());
 	shader.setFloat("spotLight.outerCutoff", spotLight.getOuterCutoff());
 
@@ -159,6 +151,7 @@ int main()
 		shader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 		shader.setVec3("spotLight.position", glm::value_ptr(spotLight.getPosition()));
 		shader.setVec3("spotLight.direction", glm::value_ptr(spotLight.getDirection()));
+		shader.setFloat("spotLight.intensity", spotLight.getIntensity() * float(spotLightActive));
 
 		backpack.Draw(shader);
 
@@ -262,6 +255,13 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 	// Set callback for mouse scroll
 	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
 		camera.updateFov(static_cast<float>(yoffset));
+	});
+
+	// Set callback for right mouse button
+	glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+		if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+			spotLightActive = !spotLightActive;
+		}
 	});
 
 	return window;
