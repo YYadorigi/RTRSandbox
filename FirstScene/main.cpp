@@ -153,6 +153,7 @@ int main()
 		backpackModel = glm::scale(backpackModel, glm::vec3(1.0f));
 
 		shader.setTransform("model", glm::value_ptr(backpackModel));
+		shader.setTransform("invModel", glm::value_ptr(glm::inverse(backpackModel)));
 		shader.setTransform("view", glm::value_ptr(view));
 		shader.setTransform("projection", glm::value_ptr(projection));
 		shader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
