@@ -37,7 +37,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<Texture2D> textures;
+	std::vector<std::shared_ptr<Texture2D>> textures;
 
 	bool hasPositions = mesh->HasPositions();
 	bool hasNormals = mesh->HasNormals();
@@ -76,51 +76,48 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	if (hasMaterial) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		std::vector<Texture2D> ambientMaps = std::move(loadMaterialTextures(material,
-			aiTextureType_AMBIENT, "ambient"));
-		std::vector<Texture2D> diffuseMaps = std::move(loadMaterialTextures(material,
-			aiTextureType_DIFFUSE, "diffuse"));
-		std::vector<Texture2D> specularMaps = std::move(loadMaterialTextures(material,
-			aiTextureType_SPECULAR, "specular"));
-		for (auto& ambientMap : ambientMaps)
-			textures.emplace_back(std::move(ambientMap));
-		for (auto& diffuseMap : diffuseMaps)
-			textures.emplace_back(std::move(diffuseMap));
-		for (auto& specularMap : specularMaps)
-			textures.emplace_back(std::move(specularMap));
+		std::vector<std::shared_ptr<Texture2D>> ambientMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient");
+		std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
+		std::vector<std::shared_ptr<Texture2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
+		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
+		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 	}
 
-	return Mesh(vertices, indices, std::move(textures));
+	return Mesh(vertices, indices, textures);
 }
 
-std::vector<Texture2D> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
+std::vector<std::shared_ptr<Texture2D>> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
 {
-	std::vector<Texture2D> textures;
+	std::vector<std::shared_ptr<Texture2D>> textures;
+
 	for (unsigned int i = 0; i < material->GetTextureCount(type); i++) {
 		aiString str;
 		material->GetTexture(type, i, &str);
 		std::string name = str.C_Str();
 
-		bool loaded = false;
+		bool skip = false;
 		for (const auto& loadedTexture : loadedTextures) {
-			if (loadedTexture == name) {
-				loaded = true;
+			if (loadedTexture->getName() == name) {
+				textures.emplace_back(loadedTexture);
+				skip = true;
 				break;
 			}
 		}
 
-		if (!loaded) {
+		if (!skip) {
 			std::string path = directory + '/' + name;
-			textures.emplace_back(
-				Texture2D(
-					path.c_str(),
-					GL_REPEAT, GL_REPEAT,
-					GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
-					0, GL_UNSIGNED_BYTE, typeName
-				)
+			Texture2D texture = Texture2D(
+				path.c_str(),
+				GL_REPEAT, GL_REPEAT,
+				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 0,
+				GL_UNSIGNED_BYTE, name, typeName
 			);
-			loadedTextures.emplace_back(name);
+			std::shared_ptr<Texture2D> tex = std::make_shared<Texture2D>(std::move(texture));
+			loadedTextures.emplace_back(tex);
+			textures.emplace_back(tex);
 		}
 	}
+
 	return textures;
 }

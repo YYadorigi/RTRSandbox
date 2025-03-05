@@ -8,8 +8,8 @@ struct Frustum
 {
 	float fov;
 	float aspectRatio;
-	float near;
-	float far;
+	float nearDist;
+	float farDist;
 	glm::mat4 getProjectionMatrix() const;
 };
 
@@ -23,7 +23,7 @@ struct Frustum
 class View
 {
 public:
-	View(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov, float aspectRatio, float near, float far);
+	View(glm::vec3 position, glm::vec3 direction, glm::vec3 up, float fov, float aspectRatio, float nearDist, float farDist);
 	View(glm::vec3 position, glm::vec3 direction, glm::vec3 up, Frustum frustum);
 	inline glm::vec3 getPosition() const { return position; }
 	inline glm::vec3 getDirection() const { return glm::normalize(direction); }

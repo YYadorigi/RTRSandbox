@@ -17,7 +17,7 @@ struct Vertex
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture2D> textures);
+	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<Texture2D>> textures);
 	~Mesh();
 	Mesh(const Mesh& other) = delete;
 	Mesh& operator=(const Mesh& other) = delete;
@@ -28,6 +28,6 @@ private:
 	void setupMesh();
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<Texture2D> textures;
+	std::vector<std::shared_ptr<Texture2D>> textures;
 	unsigned int VAO, VBO, EBO;
 };

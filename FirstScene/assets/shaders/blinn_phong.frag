@@ -1,9 +1,14 @@
 #version 330 core
 struct Material 
 {
-    sampler2D ambient;
-    sampler2D diffuse;
-    sampler2D specular;
+    sampler2D ambient1;
+    sampler2D ambient2;
+    sampler2D diffuse1;
+    sampler2D diffuse2;
+    sampler2D diffuse3;
+    sampler2D specular1;
+    sampler2D specular2;
+    sampler2D specular3;
     float shininess;
 };
 
@@ -73,7 +78,7 @@ void main()
     
     result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
     
-    result += texture(material.ambient, texCoords).rgb * ambientLight.color * ambientLight.intensity;
+    result += texture(material.ambient1, texCoords).rgb * ambientLight.color * ambientLight.intensity;
     
     gl_FragColor = vec4(result, 1.0);
 }
@@ -83,8 +88,8 @@ vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
     vec3 halfDir = normalize(light.direction + viewDir);
 
-    vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, light.direction), 0.0);
-    vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, light.direction), 0.0);
+    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     return (diffuse + specular) * light.color * light.intensity;
 }
 
@@ -94,8 +99,8 @@ vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     vec3 halfDir = normalize(lightDir + viewDir);
     float dist = length(light.position - fragPos);
 
-    vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, lightDir), 0.0);
-    vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, lightDir), 0.0);
+    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     return (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
 }
 
@@ -105,8 +110,8 @@ vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     vec3 halfDir = normalize(lightDir + viewDir);
     float dist = length(light.position - fragPos);
 
-    vec3 diffuse = texture(material.diffuse, texCoords).rgb * max(dot(normal, lightDir), 0.0);
-    vec3 specular = texture(material.specular, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, lightDir), 0.0);
+    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     vec3 original = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
 
     float theta = dot(lightDir, normalize(-light.direction));

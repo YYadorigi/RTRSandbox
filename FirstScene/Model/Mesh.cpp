@@ -1,10 +1,10 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture2D> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<Texture2D>> textures)
 {
 	this->vertices = vertices;
 	this->indices = indices;
-	this->textures = std::move(textures);
+	this->textures = textures;
 
 	setupMesh();
 }
@@ -56,23 +56,27 @@ void Mesh::Draw(Shader& shader)
 	unsigned int diffuseNr = 0;
 	unsigned int specularNr = 0;
 	for (unsigned int idx{}; const auto & texture: textures) {
+		glActiveTexture(GL_TEXTURE0 + idx);
+		texture->bind();
 		std::string number;
-		std::string texType = texture.getType();
+		std::string texType = texture->getType();
 		if (texType == "ambient") {
-			number = std::to_string(ambientNr++);
+			number = std::to_string(++ambientNr);
 		} else if (texType == "diffuse") {
-			number = std::to_string(diffuseNr++);
+			number = std::to_string(++diffuseNr);
 		} else if (texType == "specular") {
-			number = std::to_string(specularNr++);
+			number = std::to_string(++specularNr);
 		} else {
 			std::cout << "Unknown texture type" << std::endl;
 			continue;
 		}
-		glActiveTexture(GL_TEXTURE0 + idx);
-		shader.setInt("material." + texType + number, texture.bind());
+		shader.setInt("material." + texType + number, idx++);
 	}
+	shader.setFloat("material.shininess", 32.0f);
+
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+
 	glBindVertexArray(0);
 	glActiveTexture(GL_TEXTURE0);
 }
