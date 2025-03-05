@@ -42,3 +42,21 @@ Texture2D::~Texture2D()
 {
 	glDeleteTextures(1, &ID);
 }
+
+Texture2D::Texture2D(Texture2D&& other) noexcept
+{
+	ID = other.ID;
+	type = other.type;
+	other.ID = 0;
+}
+
+Texture2D& Texture2D::operator=(Texture2D&& other) noexcept
+{
+	if (this != &other) {
+		glDeleteTextures(1, &ID);
+		ID = other.ID;
+		type = other.type;
+		other.ID = 0;
+	}
+	return *this;
+}

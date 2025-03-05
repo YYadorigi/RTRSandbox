@@ -83,24 +83,18 @@ Shader::~Shader()
 	glDeleteProgram(ID);
 }
 
-Shader::Shader(const Shader& other)
-{
-	ID = other.ID;
-}
-
-Shader& Shader::operator=(const Shader& other)
-{
-	this->ID = other.ID;
-	return *this;
-}
-
 Shader::Shader(Shader&& other) noexcept
 {
 	ID = other.ID;
+	other.ID = 0;
 }
 
 Shader& Shader::operator=(Shader&& other) noexcept
 {
-	this->ID = other.ID;
+	if (this != &other) {
+		glDeleteProgram(ID);
+		ID = other.ID;
+		other.ID = 0;
+	}
 	return *this;
 }

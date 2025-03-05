@@ -10,8 +10,8 @@ class Shader
 public:
 	Shader(const char* vsPath, const char* fsPath);
 	~Shader();
-	Shader(const Shader& other);
-	Shader& operator=(const Shader& other);
+	Shader(const Shader& other) = delete;
+	Shader& operator=(const Shader& other) = delete;
 	Shader(Shader&& other) noexcept;
 	Shader& operator=(Shader&& other) noexcept;
 

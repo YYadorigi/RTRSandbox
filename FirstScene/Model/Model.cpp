@@ -64,7 +64,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		} else {
 			vertex.texCoords = glm::vec2(0.0f, 0.0f);
 		}
-
 		vertices.emplace_back(vertex);
 	}
 
@@ -77,18 +76,21 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	if (hasMaterial) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		std::vector<Texture2D> ambientMaps = loadMaterialTextures(material,
-			aiTextureType_AMBIENT, "ambient");
-		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
-		std::vector<Texture2D> diffuseMaps = loadMaterialTextures(material,
-			aiTextureType_DIFFUSE, "diffuse");
-		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-		std::vector<Texture2D> specularMaps = loadMaterialTextures(material,
-			aiTextureType_SPECULAR, "specular");
-		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+		std::vector<Texture2D> ambientMaps = std::move(loadMaterialTextures(material,
+			aiTextureType_AMBIENT, "ambient"));
+		std::vector<Texture2D> diffuseMaps = std::move(loadMaterialTextures(material,
+			aiTextureType_DIFFUSE, "diffuse"));
+		std::vector<Texture2D> specularMaps = std::move(loadMaterialTextures(material,
+			aiTextureType_SPECULAR, "specular"));
+		for (auto& ambientMap : ambientMaps)
+			textures.emplace_back(std::move(ambientMap));
+		for (auto& diffuseMap : diffuseMaps)
+			textures.emplace_back(std::move(diffuseMap));
+		for (auto& specularMap : specularMaps)
+			textures.emplace_back(std::move(specularMap));
 	}
 
-	return Mesh(vertices, indices, textures);
+	return Mesh(vertices, indices, std::move(textures));
 }
 
 std::vector<Texture2D> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
@@ -109,12 +111,16 @@ std::vector<Texture2D> Model::loadMaterialTextures(aiMaterial* material, aiTextu
 
 		if (!loaded) {
 			std::string path = directory + '/' + name;
-			Texture2D texture = Texture2D(path.c_str(), GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR,
-				GL_LINEAR, 0, GL_UNSIGNED_BYTE, typeName);
-			textures.emplace_back(texture);
+			textures.emplace_back(
+				Texture2D(
+					path.c_str(),
+					GL_REPEAT, GL_REPEAT,
+					GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
+					0, GL_UNSIGNED_BYTE, typeName
+				)
+			);
 			loadedTextures.emplace_back(name);
 		}
-
 	}
 	return textures;
 }
