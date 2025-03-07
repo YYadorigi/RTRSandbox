@@ -1,3 +1,3 @@
 # RTRSandbox
 
-![backpack](E:\Cpp Projects\RTRSandbox\README\backpack.gif)
+![backpack](https://github.com/YYadorigi/RTRSandbox/blob/main/README/backpack.gif)
