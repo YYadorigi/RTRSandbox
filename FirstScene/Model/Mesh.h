@@ -24,10 +24,11 @@ public:
 	Mesh(Mesh&& other) noexcept;
 	Mesh& operator=(Mesh&& other) noexcept;
 	void Draw(Shader& shader);
+	void Draw(Shader& shader, Shader& edgeShader);
 private:
 	void setupMesh();
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	std::vector<std::shared_ptr<Texture2D>> textures;
-	unsigned int VAO, VBO, EBO;
+	unsigned int VAO, VBO, EBO, FBO;
 };
