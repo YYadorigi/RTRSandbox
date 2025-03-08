@@ -49,7 +49,7 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
 	return *this;
 }
 
-void Mesh::Draw(Shader& shader)
+void Mesh::draw(Shader& shader)
 {
 	shader.use();
 	unsigned int ambientNr = 0;
@@ -67,7 +67,7 @@ void Mesh::Draw(Shader& shader)
 		} else if (texType == "specular") {
 			number = std::to_string(++specularNr);
 		} else {
-			std::cout << "Unknown texture type" << std::endl;
+			std::cerr << "Unknown texture type" << std::endl;
 			continue;
 		}
 		shader.setInt("material." + texType + number, idx++);

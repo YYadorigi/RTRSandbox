@@ -10,6 +10,7 @@
 #include "Viewer/Camera.h"
 #include "Viewer/Light.h"
 #include "Model/Model.h"
+#include "Framebuffer/Framebuffer.h"
 
 static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
@@ -18,14 +19,20 @@ static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
 Frustum frustum(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 
-Camera camera(
+Camera camera = Camera{
 	glm::vec3(0.0f, 0.0f, 5.0f),	// position
 	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 	frustum,
 	5.0f,	// speed
 	0.05f	// sensitivity
-);
+};
+
+DirectionalLight directional = {
+	glm::vec3(-0.2f, -1.0f, -0.3f),	// direction
+	glm::vec3(1.0f),	// color
+	0.25f,	// intensity
+};
 
 Light pointLights[] = {
 	Light(
@@ -54,18 +61,7 @@ Light pointLights[] = {
 	)
 };
 
-AmbientLight ambient = {
-	glm::vec3(1.0f),	// color
-	0.1f,	// intensity
-};
-
-DirectionalLight directional = {
-	glm::vec3(-0.2f, -1.0f, -0.3f),	// direction
-	glm::vec3(1.0f),	// color
-	0.25f,	// intensity
-};
-
-SpotLight spotLight(
+SpotLight spotLight = SpotLight{
 	glm::vec3(0.0f, 0.0f, 5.0f),	// position
 	glm::vec3(0.0f),				// target
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
@@ -74,14 +70,20 @@ SpotLight spotLight(
 	1.0f,	// intensity
 	glm::cos(glm::radians(12.5f)),	// cutoff
 	glm::cos(glm::radians(17.5f))	// outer cutoff
-);
-bool spotLightActive = true;
+}; bool spotLightActive = true;
+
+AmbientLight ambient = {
+	glm::vec3(1.0f),	// color
+	0.1f,	// intensity
+};
 
 void processInput(GLFWwindow* window);
 
 static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile);
 
 static GLFWwindow* createWindow(unsigned int width, unsigned int height, const char* title);
+
+void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 
 int main()
 {
@@ -94,37 +96,36 @@ int main()
 		return -1;
 	}
 
+	// Create extra framebuffers
+	Framebuffer framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, TestingType::DEPTH_AND_STENCIL);
+
 	// Load models
 	Model backpack("assets/objects/backpack/backpack.obj");
+	float quadVertices[] = {
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f,
+	};
+	unsigned int quadVAO, quadVBO;
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	// Load shader programs
 	Shader shader = Shader("assets/shaders/vertex/mvp.vert", "assets/shaders/fragment/blinn_phong.frag");
-	Shader outlineShader = Shader("assets/shaders/vertex/mvp_outline.vert", "assets/shaders/fragment/pure_color.frag");
-
-	// Pre-render static shader uniforms
-	shader.use();
-	shader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));	// directional light
-	shader.setVec3("dirLight.color", glm::value_ptr(directional.color));
-	shader.setFloat("dirLight.intensity", directional.intensity);
-
-	for (size_t idx{}; const auto & pointLight : pointLights) {						// point lights
-		std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
-		shader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
-		shader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
-		shader.setFloat(lightName + ".intensity", pointLight.getIntensity());
-	}
-
-	shader.setVec3("spotLight.color", glm::value_ptr(spotLight.getColor()));		// spot light
-	shader.setFloat("spotLight.cutoff", spotLight.getCutoff());
-	shader.setFloat("spotLight.outerCutoff", spotLight.getOuterCutoff());
-
-	shader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));			// ambient light
-	shader.setFloat("ambientLight.intensity", ambient.intensity);
-
-	// Set render mode
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
-	glEnable(GL_CULL_FACE);
+	Shader outlineShader = Shader("assets/shaders/vertex/outline.vert", "assets/shaders/fragment/pure_color.frag");
+	Shader postProcessing = Shader("assets/shaders/vertex/screen.vert", "assets/shaders/post_processing/grayscale.frag");
 
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -133,15 +134,11 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// show fps
+		// Show fps
 		glfwSetWindowTitle(window, ("FirstScene: " + std::to_string(static_cast<int>(1.0f / deltaTime))).c_str());
 
 		// Device input
 		processInput(window);
-
-		// Clear graphic buffers
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);	// Background color
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		// Global shader uniforms
 		glm::mat4 model = glm::mat4(1.0f);
@@ -152,104 +149,101 @@ int main()
 		shader.setTransform("view", glm::value_ptr(view));
 		shader.setTransform("projection", glm::value_ptr(projection));
 		shader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
-		shader.setVec3("spotLight.position", glm::value_ptr(spotLight.getPosition()));
+
+		shader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));	// directional light
+		shader.setVec3("dirLight.color", glm::value_ptr(directional.color));
+		shader.setFloat("dirLight.intensity", directional.intensity);
+
+		for (size_t idx{}; const auto & pointLight : pointLights) {						// point lights
+			std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
+			shader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
+			shader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
+			shader.setFloat(lightName + ".intensity", pointLight.getIntensity());
+		}
+
+		shader.setVec3("spotLight.position", glm::value_ptr(spotLight.getPosition()));	// spot light
 		shader.setVec3("spotLight.direction", glm::value_ptr(spotLight.getDirection()));
+		shader.setVec3("spotLight.color", glm::value_ptr(spotLight.getColor()));
 		shader.setFloat("spotLight.intensity", spotLight.getIntensity() * float(spotLightActive));
+		shader.setFloat("spotLight.cutoff", spotLight.getCutoff());
+		shader.setFloat("spotLight.outerCutoff", spotLight.getOuterCutoff());
+
+		shader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));			// ambient light
+		shader.setFloat("ambientLight.intensity", ambient.intensity);
 
 		outlineShader.use();
 		outlineShader.setTransform("view", glm::value_ptr(view));
 		outlineShader.setTransform("projection", glm::value_ptr(projection));
 
-		// Pre-drawcall logic
-		glCullFace(GL_FRONT);
+		outlineShader.setFloat("outlineWidth", 0.03f);
+		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));
 
-		outlineShader.use();
-		outlineShader.setFloat("outlineWidth", 0.02f);
-		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(1.0f, 0.0f, 0.0f)));
+		// First render pass
+		framebuffer.bind();
 
-		// Drawcall
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		// Pre-render settings
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glEnable(GL_CULL_FACE);
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		outlineShader.use();
-		outlineShader.setTransform("model", glm::value_ptr(model));
-		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
-
-		backpack.Draw(outlineShader);
-
-		// Drawcall
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
-
-		outlineShader.use();
-		outlineShader.setTransform("model", glm::value_ptr(model));
-		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
-
-		backpack.Draw(outlineShader);
-
-		// Post-drawcall logic
-		glCullFace(GL_BACK);
-
-		// Pre-drawcall logic
+		// Drawcalls
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-		// Drawcall
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, shader, model);
 
-		shader.use();
-		shader.setTransform("model", glm::value_ptr(model));
-		shader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
-
-		backpack.Draw(shader);
-
-		// Drawcall
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, shader, model);
 
-		shader.use();
-		shader.setTransform("model", glm::value_ptr(model));
-		shader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-		backpack.Draw(shader);
-
-		// Pre-drawcall logic
+		// Drawcalls
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-		outlineShader.use();
-		outlineShader.setFloat("outlineWidth", 0.02f);
-		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));
-
-		// Drawcall
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, outlineShader, model);
 
-		outlineShader.use();
-		outlineShader.setTransform("model", glm::value_ptr(model));
-		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
-
-		backpack.Draw(outlineShader);
-
-		// Drawcall
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, outlineShader, model);
 
-		outlineShader.use();
-		outlineShader.setTransform("model", glm::value_ptr(model));
-		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
-
-		backpack.Draw(outlineShader);
-
-		// Post-drawcall logic
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 
-		// Pre-drawcall logic
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		// Post-render settings
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_CULL_FACE);
+
+		// Second render pass
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Pre-render settings
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		postProcessing.use();
+		postProcessing.setInt("colorTexture", 0);
+		glActiveTexture(GL_TEXTURE0);
+		framebuffer.bindTex();
+
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Swap buffers and poll IO events
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	glDeleteVertexArrays(1, &quadVAO);
+	glDeleteBuffers(1, &quadVBO);
 
 	// Destroy window
 	glfwDestroyWindow(window);
@@ -357,4 +351,12 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 	});
 
 	return window;
+}
+
+void sceneDraw(Model& model, Shader& shader, glm::mat4 transform)
+{
+	shader.use();
+	shader.setTransform("model", glm::value_ptr(transform));
+	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
+	model.draw(shader);
 }

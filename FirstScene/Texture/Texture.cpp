@@ -35,9 +35,10 @@ Texture2D::Texture2D(const char* path, unsigned int wrapS, unsigned int wrapT, u
 
 		stbi_image_free(data);
 	} else {
-		std::cout << "Failed to load texture" << std::endl;
+		std::cerr << "Failed to load texture" << std::endl;
 		stbi_image_free(data);
 	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 Texture2D::~Texture2D()

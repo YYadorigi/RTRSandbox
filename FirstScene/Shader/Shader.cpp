@@ -29,7 +29,7 @@ Shader::Shader(const char* vsPath, const char* fsPath)
 		vsCode = vsStream.str();
 		fsCode = fsStream.str();
 	} catch (std::ifstream::failure e) {
-		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+		std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
 	}
 
 	// Convert string to C string
@@ -52,12 +52,12 @@ Shader::Shader(const char* vsPath, const char* fsPath)
 	glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(vs, 512, nullptr, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 	};
 	glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(fs, 512, nullptr, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 	};
 
 	// Link shaders
@@ -70,7 +70,7 @@ Shader::Shader(const char* vsPath, const char* fsPath)
 	glGetProgramiv(ID, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(ID, 512, nullptr, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+		std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 	}
 
 	// Delete shaders after linking

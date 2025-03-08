@@ -45,6 +45,8 @@ project "FirstScene"
 		"%{prj.name}/Viewer/**.cpp",
 		"%{prj.name}/Model/**.h",
 		"%{prj.name}/Model/**.cpp",
+		"%{prj.name}/Framebuffer/**.h",
+		"%{prj.name}/Framebuffer/**.cpp",
 		"%{prj.name}/macro.h",
 		"%{prj.name}/main.cpp",
 	}

@@ -6,7 +6,7 @@ Model::Model(const std::string& path)
 	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-		std::cout << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
+		std::cerr << "ERROR::ASSIMP::" << import.GetErrorString() << std::endl;
 		return;
 	}
 	directory = path.substr(0, path.find_last_of('/'));
@@ -14,10 +14,10 @@ Model::Model(const std::string& path)
 	processNode(scene->mRootNode, scene);
 }
 
-void Model::Draw(Shader& shader)
+void Model::draw(Shader& shader)
 {
 	for (auto& mesh : meshes) {
-		mesh.Draw(shader);
+		mesh.draw(shader);
 	}
 }
 
@@ -46,11 +46,11 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	bool hasMaterial = mesh->mMaterialIndex >= 0;
 
 	if (!hasPositions || !hasFaces) {
-		std::cout << "Mesh does not have positions or faces" << std::endl;
+		std::cerr << "Mesh does not have positions or faces" << std::endl;
 		return Mesh({}, {}, {});
 	}
 	if (!hasNormals) {
-		std::cout << "Smooth normals not generated" << std::endl;
+		std::cerr << "Smooth normals not generated" << std::endl;
 		return Mesh({}, {}, {});
 	}
 

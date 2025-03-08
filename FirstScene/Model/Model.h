@@ -11,7 +11,7 @@ class Model
 {
 public:
 	Model(const std::string& path);
-	void Draw(Shader& shader);
+	void draw(Shader& shader);
 private:
 	std::vector<Mesh> meshes;
 	std::vector<std::shared_ptr<Texture2D>> loadedTextures;
