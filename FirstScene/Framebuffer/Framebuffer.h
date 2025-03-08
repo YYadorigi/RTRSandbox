@@ -14,10 +14,16 @@ enum class TestingType
 	DEPTH_AND_STENCIL,
 };
 
+enum class TextureFilter
+{
+	NEARST = GL_NEAREST,
+	LINEAR = GL_LINEAR,
+};
+
 class Framebuffer
 {
 public:
-	Framebuffer(unsigned int width, unsigned int height, TestingType testingType);
+	Framebuffer(unsigned int width, unsigned int height, TestingType testingType, TextureFilter filter = TextureFilter::LINEAR);
 	~Framebuffer();
 	Framebuffer(const Framebuffer& other) = delete;
 	Framebuffer& operator=(const Framebuffer& other) = delete;

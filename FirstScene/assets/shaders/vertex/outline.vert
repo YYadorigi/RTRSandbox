@@ -11,7 +11,7 @@ uniform mat4 model;
 uniform mat4 invModel;
 uniform mat4 view;
 uniform mat4 projection;
-uniform float outlineWidth;
+uniform float outlineWidth = 0.03;
 
 void main()
 {

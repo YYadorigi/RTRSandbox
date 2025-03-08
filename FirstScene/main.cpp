@@ -105,9 +105,9 @@ int main()
 	ScreenQuad screenQuad;
 
 	// Load shader programs
-	Shader shader = Shader("assets/shaders/vertex/mvp.vert", "assets/shaders/fragment/blinn_phong.frag");
+	Shader shader = Shader("assets/shaders/vertex/main.vert", "assets/shaders/fragment/blinn_phong.frag");
 	Shader outlineShader = Shader("assets/shaders/vertex/outline.vert", "assets/shaders/fragment/pure_color.frag");
-	Shader postProcessing = Shader("assets/shaders/vertex/screen.vert", "assets/shaders/post_processing/grayscale.frag");
+	Shader postProcessing = Shader("assets/shaders/vertex/screen.vert", "assets/shaders/post_processing/main.frag");
 
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
