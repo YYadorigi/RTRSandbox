@@ -99,10 +99,12 @@ int main()
 
 	// Create extra framebuffers
 	Framebuffer framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, TestingType::DEPTH_AND_STENCIL);
+	Framebuffer rearviewFrambuffer(SCREEN_WIDTH, SCREEN_HEIGHT, TestingType::DEPTH_AND_STENCIL);
 
 	// Load models
 	Model backpack("assets/objects/backpack/backpack.obj");
 	ScreenQuad screenQuad;
+	ScreenQuad rearviewQuad(0.25f, glm::vec2(-0.75f, -0.75f));
 
 	// Load shader programs
 	Shader shader = Shader("assets/shaders/vertex/main.vert", "assets/shaders/fragment/blinn_phong.frag");
@@ -128,10 +130,6 @@ int main()
 		glm::mat4 projection = camera.getProjectionMatrix();
 
 		shader.use();
-		shader.setTransform("view", glm::value_ptr(view));
-		shader.setTransform("projection", glm::value_ptr(projection));
-		shader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
-
 		shader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));	// directional light
 		shader.setVec3("dirLight.color", glm::value_ptr(directional.color));
 		shader.setFloat("dirLight.intensity", directional.intensity);
@@ -153,24 +151,28 @@ int main()
 		shader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));			// ambient light
 		shader.setFloat("ambientLight.intensity", ambient.intensity);
 
-		outlineShader.use();
-		outlineShader.setTransform("view", glm::value_ptr(view));
-		outlineShader.setTransform("projection", glm::value_ptr(projection));
-
-		outlineShader.setFloat("outlineWidth", 0.03f);
-		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));
-
 		// First render pass
 		framebuffer.bind();
 
 		// Pre-render settings
+		shader.use();
+		shader.setTransform("view", glm::value_ptr(view));
+		shader.setTransform("projection", glm::value_ptr(projection));
+		shader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+
+		outlineShader.use();
+		outlineShader.setTransform("view", glm::value_ptr(view));
+		outlineShader.setTransform("projection", glm::value_ptr(projection));
+		outlineShader.setFloat("outlineWidth", 0.03f);
+		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_STENCIL_TEST);
 		glEnable(GL_CULL_FACE);
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		// Drawcalls
+		// Drawcall
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
@@ -182,7 +184,56 @@ int main()
 
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-		// Drawcalls
+		// Drawcall
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, outlineShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, outlineShader, model);
+
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+
+		// Post-render settings
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_CULL_FACE);
+
+		// Second render pass
+		rearviewFrambuffer.bind();
+
+		// Pre-render settings
+		glm::mat4 rearview = camera.getRearviewMatrix();
+
+		shader.use();
+		shader.setTransform("view", glm::value_ptr(rearview));
+
+		outlineShader.use();
+		outlineShader.setTransform("view", glm::value_ptr(rearview));
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glEnable(GL_CULL_FACE);
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+		// Drawcall
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, shader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+		sceneDraw(backpack, shader, model);
+
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		// Drawcall
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
@@ -210,6 +261,7 @@ int main()
 
 		// Drawcalls
 		screenQuad.draw(framebuffer, postProcessing);
+		rearviewQuad.draw(rearviewFrambuffer, postProcessing);
 
 		// Swap buffers and poll IO events
 		glfwSwapBuffers(window);

@@ -1,16 +1,16 @@
 #include "ScreenQuad.h"
 
-ScreenQuad::ScreenQuad()
+ScreenQuad::ScreenQuad(float scale, glm::vec2 movement)
 {
-	static float quadVertices[] = {
-		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		-1.0f, -1.0f,  0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
+	float quadVertices[] = {
+		// positions													// texCoords
+		((-1.0f * scale) + movement.x), ((1.0f * scale) + movement.y),  0.0f, 1.0f,
+		((-1.0f * scale) + movement.x), ((-1.0f * scale) + movement.y), 0.0f, 0.0f,
+		((1.0f * scale) + movement.x),  ((-1.0f * scale) + movement.y), 1.0f, 0.0f,
 
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f,
+		((-1.0f * scale) + movement.x), ((1.0f * scale) + movement.y),  0.0f, 1.0f,
+		((1.0f * scale) + movement.x),  ((-1.0f * scale) + movement.y), 1.0f, 0.0f,
+		((1.0f * scale) + movement.x),  ((1.0f * scale) + movement.y),  1.0f, 1.0f,
 	};
 
 	glGenVertexArrays(1, &VAO);

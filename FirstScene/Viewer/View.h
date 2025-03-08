@@ -30,6 +30,7 @@ public:
 	inline glm::vec3 getUp() const { return glm::normalize(up); }
 	inline glm::vec3 getRight() const { return glm::normalize(glm::cross(direction, up)); }
 	glm::mat4 getViewMatrix() const;
+	glm::mat4 getRearviewMatrix() const;
 	glm::mat4 getProjectionMatrix() const;
 protected:
 	glm::vec3 position;

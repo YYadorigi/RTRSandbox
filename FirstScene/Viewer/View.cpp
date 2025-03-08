@@ -26,6 +26,11 @@ glm::mat4 View::getViewMatrix() const
 	return glm::lookAt(position, position + direction, up);
 }
 
+glm::mat4 View::getRearviewMatrix() const
+{
+	return glm::lookAt(position, position - direction, up);
+}
+
 glm::mat4 View::getProjectionMatrix() const
 {
 	return frustum.getProjectionMatrix();
