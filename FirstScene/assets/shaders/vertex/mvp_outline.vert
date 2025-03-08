@@ -15,10 +15,9 @@ uniform float outlineWidth;
 
 void main()
 {
-    vec3 displacement = aNorm * outlineWidth;
-    vec3 position = aPos + displacement;
-    fragPos = vec3(model * vec4(position, 1.0));
     normal = normalize(transpose(mat3(invModel)) * aNorm);
+    vec4 displacement = vec4(normal * outlineWidth, 0.0);
+    fragPos = vec3(model * vec4(aPos, 1.0) + displacement);
     texCoords = aTexCoords;
-    gl_Position = projection * view * model * vec4(position, 1.0);
+    gl_Position = projection * view * (model * vec4(aPos, 1.0) + displacement);
 }

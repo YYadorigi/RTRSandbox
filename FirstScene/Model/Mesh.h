@@ -24,7 +24,7 @@ public:
 	Mesh(Mesh&& other) noexcept;
 	Mesh& operator=(Mesh&& other) noexcept;
 	void Draw(Shader& shader);
-	void Draw(Shader& shader, Shader& edgeShader);
+	// void Draw(Shader& shader, Shader& edgeShader);
 private:
 	void setupMesh();
 	std::vector<Vertex> vertices;

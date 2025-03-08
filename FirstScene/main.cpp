@@ -121,13 +121,10 @@ int main()
 	shader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));			// ambient light
 	shader.setFloat("ambientLight.intensity", ambient.intensity);
 
-	outlineShader.use();
-	outlineShader.setFloat("outlineWidth", 0.02f);									// outline width
-	outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));	// outline color
-
 	// Set render mode
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
+	glEnable(GL_CULL_FACE);
 
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -135,6 +132,9 @@ int main()
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		// show fps
+		glfwSetWindowTitle(window, ("FirstScene: " + std::to_string(static_cast<int>(1.0f / deltaTime))).c_str());
 
 		// Device input
 		processInput(window);
@@ -144,6 +144,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		// Global shader uniforms
+		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection = camera.getProjectionMatrix();
 
@@ -160,24 +161,52 @@ int main()
 		outlineShader.setTransform("projection", glm::value_ptr(projection));
 
 		// Pre-drawcall logic
+		glCullFace(GL_FRONT);
+
+		outlineShader.use();
+		outlineShader.setFloat("outlineWidth", 0.02f);
+		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(1.0f, 0.0f, 0.0f)));
+
+		// Drawcall
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+
+		outlineShader.use();
+		outlineShader.setTransform("model", glm::value_ptr(model));
+		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
+
+		backpack.Draw(outlineShader);
+
+		// Drawcall
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+
+		outlineShader.use();
+		outlineShader.setTransform("model", glm::value_ptr(model));
+		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
+
+		backpack.Draw(outlineShader);
+
+		// Post-drawcall logic
+		glCullFace(GL_BACK);
+
+		// Pre-drawcall logic
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 		// Drawcall
-		glm::mat4 backpackModel = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
 
 		shader.use();
-		shader.setTransform("model", glm::value_ptr(backpackModel));
-		shader.setTransform("invModel", glm::value_ptr(glm::inverse(backpackModel)));
+		shader.setTransform("model", glm::value_ptr(model));
+		shader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
 
 		backpack.Draw(shader);
 
 		// Drawcall
-		backpackModel = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
 
 		shader.use();
-		shader.setTransform("model", glm::value_ptr(backpackModel));
-		shader.setTransform("invModel", glm::value_ptr(glm::inverse(backpackModel)));
+		shader.setTransform("model", glm::value_ptr(model));
+		shader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
 
 		backpack.Draw(shader);
 
@@ -187,21 +216,25 @@ int main()
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
+		outlineShader.use();
+		outlineShader.setFloat("outlineWidth", 0.02f);
+		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));
+
 		// Drawcall
-		backpackModel = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
 
 		outlineShader.use();
-		outlineShader.setTransform("model", glm::value_ptr(backpackModel));
-		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(backpackModel)));
+		outlineShader.setTransform("model", glm::value_ptr(model));
+		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
 
 		backpack.Draw(outlineShader);
 
 		// Drawcall
-		backpackModel = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
 
 		outlineShader.use();
-		outlineShader.setTransform("model", glm::value_ptr(backpackModel));
-		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(backpackModel)));
+		outlineShader.setTransform("model", glm::value_ptr(model));
+		outlineShader.setTransform("invModel", glm::value_ptr(glm::inverse(model)));
 
 		backpack.Draw(outlineShader);
 

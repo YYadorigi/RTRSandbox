@@ -78,7 +78,10 @@ void Mesh::Draw(Shader& shader)
 	glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(0);
-	glActiveTexture(GL_TEXTURE0);
+	for (unsigned int idx{}; const auto & texture: textures) {
+		glActiveTexture(GL_TEXTURE0 + idx);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 }
 
 void Mesh::setupMesh()
