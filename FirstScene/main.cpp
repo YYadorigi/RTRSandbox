@@ -11,6 +11,7 @@
 #include "Viewer/Light.h"
 #include "Model/Model.h"
 #include "Framebuffer/Framebuffer.h"
+#include "Framebuffer/ScreenQuad.h"
 
 static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
@@ -101,26 +102,7 @@ int main()
 
 	// Load models
 	Model backpack("assets/objects/backpack/backpack.obj");
-	float quadVertices[] = {
-		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		-1.0f, -1.0f,  0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f,
-	};
-	unsigned int quadVAO, quadVBO;
-	glGenVertexArrays(1, &quadVAO);
-	glGenBuffers(1, &quadVBO);
-	glBindVertexArray(quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	ScreenQuad screenQuad;
 
 	// Load shader programs
 	Shader shader = Shader("assets/shaders/vertex/mvp.vert", "assets/shaders/fragment/blinn_phong.frag");
@@ -226,24 +208,13 @@ int main()
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		postProcessing.use();
-		postProcessing.setInt("colorTexture", 0);
-		glActiveTexture(GL_TEXTURE0);
-		framebuffer.bindTex();
-
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glBindVertexArray(0);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		// Drawcalls
+		screenQuad.draw(framebuffer, postProcessing);
 
 		// Swap buffers and poll IO events
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
-	glDeleteVertexArrays(1, &quadVAO);
-	glDeleteBuffers(1, &quadVBO);
 
 	// Destroy window
 	glfwDestroyWindow(window);
