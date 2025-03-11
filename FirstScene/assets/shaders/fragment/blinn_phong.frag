@@ -63,12 +63,6 @@ vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
-vec3 alphaColor(sampler2D tex, vec2 uv)
-{
-    vec4 rgba = texture(tex, uv);
-    return rgba.rgb * rgba.a;
-}
-
 void main()
 {
     vec3 viewDir = normalize(viewPos - fragPos);
@@ -84,7 +78,7 @@ void main()
     
     result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
     
-    result += alphaColor(material.ambient1, texCoords) * ambientLight.intensity * ambientLight.color;
+    result += texture(material.ambient1, texCoords).rgb * ambientLight.intensity * ambientLight.color;
     
     gl_FragColor = vec4(result, 1.0);
 }
@@ -94,8 +88,8 @@ vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
     vec3 halfDir = normalize(light.direction + viewDir);
 
-    vec3 diffuse = alphaColor(material.diffuse1, texCoords) * max(dot(normal, light.direction), 0.0);
-    vec3 specular = alphaColor(material.specular1, texCoords) * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, light.direction), 0.0);
+    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     return (diffuse + specular) * light.color * light.intensity;
 }
 
@@ -105,8 +99,8 @@ vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     vec3 halfDir = normalize(lightDir + viewDir);
     float dist = length(light.position - fragPos);
 
-    vec3 diffuse = alphaColor(material.diffuse1, texCoords) * max(dot(normal, lightDir), 0.0);
-    vec3 specular = alphaColor(material.specular1, texCoords) * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, lightDir), 0.0);
+    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     return (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
 }
 
@@ -116,8 +110,8 @@ vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     vec3 halfDir = normalize(lightDir + viewDir);
     float dist = length(light.position - fragPos);
 
-    vec3 diffuse = alphaColor(material.diffuse1, texCoords) * max(dot(normal, lightDir), 0.0);
-    vec3 specular = alphaColor(material.specular1, texCoords) * pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, lightDir), 0.0);
+    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
     vec3 original = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
 
     float theta = dot(lightDir, normalize(-light.direction));

@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<Texture2D>> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures)
 {
 	this->vertices = vertices;
 	this->indices = indices;
@@ -55,7 +55,7 @@ void Mesh::draw(Shader& shader)
 	unsigned int ambientNr = 0;
 	unsigned int diffuseNr = 0;
 	unsigned int specularNr = 0;
-	for (unsigned int idx{}; const auto & texture: textures) {
+	for (unsigned int idx = 1; const auto & texture: textures) {
 		glActiveTexture(GL_TEXTURE0 + idx);
 		texture->bind();
 		std::string number;
@@ -78,10 +78,11 @@ void Mesh::draw(Shader& shader)
 	glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(0);
-	for (unsigned int idx{}; const auto & texture: textures) {
+	for (unsigned int idx = 1; const auto & texture: textures) {
 		glActiveTexture(GL_TEXTURE0 + idx);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+	glActiveTexture(GL_TEXTURE0);
 }
 
 void Mesh::setupMesh()

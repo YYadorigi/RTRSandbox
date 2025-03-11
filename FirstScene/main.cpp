@@ -10,6 +10,7 @@
 #include "Viewer/Camera.h"
 #include "Viewer/Light.h"
 #include "Model/Model.h"
+#include "Framebuffer/Renderbuffer.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
 
@@ -20,7 +21,7 @@ static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
 Frustum frustum(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 
-Camera camera = Camera{
+static Camera camera = Camera{
 	glm::vec3(0.0f, 0.0f, 5.0f),	// position
 	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
@@ -36,7 +37,7 @@ DirectionalLight directional = {
 };
 
 Light pointLights[] = {
-	Light(
+	PointLight(
 		glm::vec3(1.0f, 1.0f, 1.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
@@ -44,7 +45,7 @@ Light pointLights[] = {
 		glm::vec3(1.0f, 0.5f, 1.0f),	// color
 		1.0f	// intensity
 	),
-	Light(
+	PointLight(
 		glm::vec3(-1.0f, -1.0f, -2.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
@@ -52,7 +53,7 @@ Light pointLights[] = {
 		glm::vec3(1.0f, 1.0f, 0.5f),	// color
 		1.0f	// intensity
 	),
-	Light(
+	PointLight(
 		glm::vec3(-1.0f, 1.0f, 1.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
@@ -62,7 +63,7 @@ Light pointLights[] = {
 	)
 };
 
-SpotLight spotLight = SpotLight{
+static SpotLight cameraLight = SpotLight{
 	glm::vec3(0.0f, 0.0f, 5.0f),	// position
 	glm::vec3(0.0f),				// target
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
@@ -71,7 +72,7 @@ SpotLight spotLight = SpotLight{
 	1.0f,	// intensity
 	glm::cos(glm::radians(12.5f)),	// cutoff
 	glm::cos(glm::radians(17.5f))	// outer cutoff
-}; bool spotLightActive = true;
+}; static bool cameraLightActive = true;
 
 AmbientLight ambient = {
 	glm::vec3(1.0f),	// color
@@ -97,9 +98,21 @@ int main()
 		return -1;
 	}
 
-	// Create extra framebuffers
-	Framebuffer framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, TestingType::DEPTH_AND_STENCIL);
-	Framebuffer rearviewFrambuffer(SCREEN_WIDTH, SCREEN_HEIGHT, TestingType::DEPTH_AND_STENCIL);
+	// Create framebuffers
+	std::shared_ptr<Renderbuffer> depthRBO = std::make_shared<Renderbuffer>(
+		Renderbuffer(SCREEN_WIDTH, SCREEN_HEIGHT, RBOType::DEPTH)
+	);
+
+	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
+	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, GL_LINEAR);	// opaque color texture
+	opaqueFBO.attachRenderbuffer(depthRBO);											// opaque depth texture
+
+	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
+	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, GL_LINEAR);	// accum texture
+	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT, GL_LINEAR);				// reveal texture
+	transparentFBO.attachRenderbuffer(depthRBO);										// opaque depth texture
+	const unsigned int transparentDrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, transparentDrawBuffers);
 
 	// Load models
 	Model backpack("assets/objects/backpack/backpack.obj");
@@ -141,18 +154,15 @@ int main()
 			shader.setFloat(lightName + ".intensity", pointLight.getIntensity());
 		}
 
-		shader.setVec3("spotLight.position", glm::value_ptr(spotLight.getPosition()));	// spot light
-		shader.setVec3("spotLight.direction", glm::value_ptr(spotLight.getDirection()));
-		shader.setVec3("spotLight.color", glm::value_ptr(spotLight.getColor()));
-		shader.setFloat("spotLight.intensity", spotLight.getIntensity() * float(spotLightActive));
-		shader.setFloat("spotLight.cutoff", spotLight.getCutoff());
-		shader.setFloat("spotLight.outerCutoff", spotLight.getOuterCutoff());
+		shader.setVec3("spotLight.position", glm::value_ptr(cameraLight.getPosition()));	// spot light
+		shader.setVec3("spotLight.direction", glm::value_ptr(cameraLight.getDirection()));
+		shader.setVec3("spotLight.color", glm::value_ptr(cameraLight.getColor()));
+		shader.setFloat("spotLight.intensity", cameraLight.getIntensity() * float(cameraLightActive));
+		shader.setFloat("spotLight.cutoff", cameraLight.getCutoff());
+		shader.setFloat("spotLight.outerCutoff", cameraLight.getOuterCutoff());
 
 		shader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));			// ambient light
 		shader.setFloat("ambientLight.intensity", ambient.intensity);
-
-		// First render pass
-		framebuffer.bind();
 
 		// Pre-render settings
 		shader.use();
@@ -203,66 +213,6 @@ int main()
 		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_CULL_FACE);
 
-		// Second render pass
-		rearviewFrambuffer.bind();
-
-		// Pre-render settings
-		glm::mat4 rearview = camera.getRearviewMatrix();
-
-		shader.use();
-		shader.setTransform("view", glm::value_ptr(rearview));
-
-		outlineShader.use();
-		outlineShader.setTransform("view", glm::value_ptr(rearview));
-
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
-		glEnable(GL_CULL_FACE);
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-		// Drawcall
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, shader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, shader, model);
-
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-		// Drawcall
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, outlineShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, outlineShader, model);
-
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
-
-		// Post-render settings
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
-		glDisable(GL_CULL_FACE);
-
-		// Second render pass
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// Pre-render settings
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		// Drawcalls
-		screenQuad.draw(framebuffer, postProcessing);
-		rearviewQuad.draw(rearviewFrambuffer, postProcessing);
-
 		// Swap buffers and poll IO events
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -290,7 +240,7 @@ void processInput(GLFWwindow* window)
 		camera.updatePosition(-camera.getRight(), deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.updatePosition(camera.getRight(), deltaTime);
-	spotLight.updatePosition(camera.getPosition());
+	cameraLight.updatePosition(camera.getPosition());
 }
 
 static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile)
@@ -356,9 +306,8 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 		float offsetY = lastY - static_cast<float>(ypos);	// Reversed since y-coordinates range from bottom to top
 		lastX = static_cast<float>(xpos);
 		lastY = static_cast<float>(ypos);
-		camera.updatePitchYaw(offsetX, offsetY);
-		camera.updateDirection();
-		spotLight.updateDirection(camera.getDirection());
+		camera.updateDirection(offsetX, offsetY);
+		cameraLight.updateDirection(camera.getDirection());
 	});
 
 	// Set callback for mouse scroll
@@ -369,7 +318,7 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 	// Set callback for right mouse button
 	glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-			spotLightActive = !spotLightActive;
+			cameraLightActive = !cameraLightActive;
 		}
 	});
 

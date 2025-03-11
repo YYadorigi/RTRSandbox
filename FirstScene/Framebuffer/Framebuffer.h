@@ -2,35 +2,19 @@
 #include <iostream>
 #include <vector>
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-enum class TestingType
-{
-	NONE,
-	DEPTH,
-	STENCIL,
-	DEPTH_AND_STENCIL,
-};
-
-enum class TextureFilter
-{
-	NEARST = GL_NEAREST,
-	LINEAR = GL_LINEAR,
-};
+#include "Texture/Texture2D.h"
+#include "Renderbuffer.h"
 
 class Framebuffer
 {
 public:
-	Framebuffer(unsigned int width, unsigned int height, TestingType testingType, TextureFilter filter = TextureFilter::LINEAR);
-	~Framebuffer();
-	Framebuffer(const Framebuffer& other) = delete;
-	Framebuffer& operator=(const Framebuffer& other) = delete;
-	Framebuffer(Framebuffer&& other) noexcept;
-	Framebuffer& operator=(Framebuffer&& other) noexcept;
-	inline void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, FBO); }
-	inline void bindTex() const { glBindTexture(GL_TEXTURE_2D, colorTex); }
+	Framebuffer(unsigned int width, unsigned int height);
+	void attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned int dataType, unsigned int filter);
+	void attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer);
 private:
-	unsigned int FBO, colorTex, RBO;
+	unsigned int getColorAttachmentIndex();
+	unsigned int FBO;
+	unsigned int width, height;
+	std::vector<RenderTexture2D> colorAttachments;
+	std::shared_ptr<Renderbuffer> renderbuffer;
 };

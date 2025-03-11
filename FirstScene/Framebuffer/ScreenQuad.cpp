@@ -52,17 +52,3 @@ ScreenQuad& ScreenQuad::operator=(ScreenQuad&& other) noexcept
 	}
 	return *this;
 }
-
-void ScreenQuad::draw(Framebuffer& framebuffer, Shader& shader) const
-{
-	glActiveTexture(GL_TEXTURE0);
-	framebuffer.bindTex();
-	shader.use();
-	shader.setInt("screenTexture", 0);
-
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}

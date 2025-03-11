@@ -1,29 +1,23 @@
 #include "Light.h"
 
-Light::Light(glm::vec3 position, glm::vec3 target, glm::vec3 up, float fov, float aspectRatio, float near, float far,
-	glm::vec3 color, float intensity) : View(position, target - position, up, fov, aspectRatio, near, far)
+void Light::updateDirection(glm::vec3 vec, UpdateType type)
 {
-	this->color = color;
-	this->intensity = intensity;
+	if (type == UpdateType::DIRECTION) {
+		direction = glm::normalize(vec);
+	} else if (type == UpdateType::TARGET) {
+		direction = glm::normalize(vec - position);
+	}
 }
 
 Light::Light(glm::vec3 position, glm::vec3 target, glm::vec3 up, Frustum frustum, glm::vec3 color, float intensity) :
-	View(position, target - position, up, frustum)
-{
-	this->color = color;
-	this->intensity = intensity;
-}
+	View(position, target - position, up, frustum), color(color), intensity(intensity)
+{}
 
-SpotLight::SpotLight(glm::vec3 position, glm::vec3 target, glm::vec3 up, float fov, float aspectRatio, float near, float far,
-	glm::vec3 color, float intensity, float cutoff, float outerCutoff) : Light(position, target, up, fov, aspectRatio, near, far, color, intensity)
-{
-	this->cutoff = cutoff;
-	this->outerCutoff = outerCutoff;
-}
+PointLight::PointLight(glm::vec3 position, glm::vec3 target, glm::vec3 up, Frustum frustum, glm::vec3 color, float intensity) :
+	Light(position, target, up, frustum, color, intensity)
+{}
 
-SpotLight::SpotLight(glm::vec3 position, glm::vec3 target, glm::vec3 up, Frustum frustum, glm::vec3 color, float intensity,
-	float cutoff, float outerCutoff) : Light(position, target, up, frustum, color, intensity)
-{
-	this->cutoff = cutoff;
-	this->outerCutoff = outerCutoff;
-}
+SpotLight::SpotLight(glm::vec3 position, glm::vec3 target, glm::vec3 up, Frustum frustum, glm::vec3 color,
+	float intensity, float cutoff, float outerCutoff) :
+	Light(position, target, up, frustum, color, intensity), cutoff(cutoff), outerCutoff(outerCutoff)
+{}

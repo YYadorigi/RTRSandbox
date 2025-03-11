@@ -1,83 +1,68 @@
 #include "Framebuffer.h"
 
-Framebuffer::Framebuffer(unsigned int width, unsigned int height, TestingType testingType, TextureFilter filter)
+Framebuffer::Framebuffer(unsigned int width, unsigned int height) : width(width), height(height)
 {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	glGenTextures(1, &colorTex);
-	glBindTexture(GL_TEXTURE_2D, colorTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<unsigned int>(filter));
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<unsigned int>(filter));
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
-
-	RBO = 0;
-	if (testingType != TestingType::NONE) {
-		glGenRenderbuffers(1, &RBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-		unsigned int format = 0;
-		unsigned int attachment = 0;
-		switch (testingType) {
-			case TestingType::DEPTH:
-				format = GL_DEPTH_COMPONENT24;
-				attachment = GL_DEPTH_ATTACHMENT;
-				break;
-			case TestingType::STENCIL:
-				format = GL_STENCIL_INDEX8;
-				attachment = GL_STENCIL_ATTACHMENT;
-				break;
-			case TestingType::DEPTH_AND_STENCIL:
-				format = GL_DEPTH24_STENCIL8;
-				attachment = GL_DEPTH_STENCIL_ATTACHMENT;
-				break;
-			default:
-				break;
-		}
-		glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, RBO);
-	}
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		std::cerr << "Framebuffer is not complete!" << std::endl;
-	};
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
-Framebuffer::~Framebuffer()
+void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned int dataType, unsigned int filter)
 {
-	glDeleteFramebuffers(1, &FBO);
-	glDeleteTextures(1, &colorTex);
-	glDeleteRenderbuffers(1, &RBO);
-}
+	unsigned int index = getColorAttachmentIndex();
 
-Framebuffer::Framebuffer(Framebuffer&& other) noexcept
-{
-	FBO = other.FBO;
-	colorTex = other.colorTex;
-	RBO = other.RBO;
-	other.FBO = 0;
-	other.colorTex = 0;
-	other.RBO = 0;
-}
-
-Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept
-{
-	if (this != &other) {
-		glDeleteFramebuffers(1, &FBO);
-		glDeleteTextures(1, &colorTex);
-		glDeleteRenderbuffers(1, &RBO);
-		FBO = other.FBO;
-		colorTex = other.colorTex;
-		RBO = other.RBO;
-		other.FBO = 0;
-		other.colorTex = 0;
-		other.RBO = 0;
+	int maxAttach;
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAttach);
+	if (index >= (unsigned int)maxAttach) {
+		std::cerr << "Exceeded maximum number of color attachments" << std::endl;
+		return;
 	}
-	return *this;
+
+	RenderTexture2D texture = RenderTexture2D(
+		width, height,
+		internalFormat, format, dataType,
+		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+		filter, filter
+	);
+	colorAttachments.emplace_back(std::move(texture));
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture.getID(), 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
+{
+	std::pair<unsigned int, unsigned int> size = renderbuffer->getSize();
+	if (size.first != width || size.second != height) {
+		std::cerr << "Renderbuffer size does not match framebuffer size" << std::endl;
+		return;
+	}
+
+	this->renderbuffer = renderbuffer;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	unsigned int attachment = 0;
+	switch (renderbuffer->getType()) {
+		case RBOType::DEPTH:
+			attachment = GL_DEPTH_ATTACHMENT;
+			break;
+		case RBOType::STENCIL:
+			attachment = GL_STENCIL_ATTACHMENT;
+			break;
+		case RBOType::DEPTH_AND_STENCIL:
+			attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+			break;
+		default:
+			break;
+
+	}
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer->getID());
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+unsigned int Framebuffer::getColorAttachmentIndex()
+{
+	static unsigned int idx = 0;
+	return idx++;
 }

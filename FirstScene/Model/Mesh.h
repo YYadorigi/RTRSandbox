@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Texture/Texture.h"
+#include "Texture/Texture2D.h"
 #include "Shader/Shader.h"
 
 struct Vertex
@@ -17,18 +17,18 @@ struct Vertex
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<Texture2D>> textures);
+	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures);
 	~Mesh();
 	Mesh(const Mesh& other) = delete;
 	Mesh& operator=(const Mesh& other) = delete;
 	Mesh(Mesh&& other) noexcept;
 	Mesh& operator=(Mesh&& other) noexcept;
 	void draw(Shader& shader);
-	// void Draw(Shader& shader, Shader& edgeShader);
 private:
 	void setupMesh();
+private:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<std::shared_ptr<Texture2D>> textures;
+	std::vector<std::shared_ptr<TextureMap2D>> textures;
 	unsigned int VAO, VBO, EBO;
 };

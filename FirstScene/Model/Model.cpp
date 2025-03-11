@@ -37,7 +37,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<std::shared_ptr<Texture2D>> textures;
+	std::vector<std::shared_ptr<TextureMap2D>> textures;
 
 	bool hasPositions = mesh->HasPositions();
 	bool hasNormals = mesh->HasNormals();
@@ -76,9 +76,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	if (hasMaterial) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		std::vector<std::shared_ptr<Texture2D>> ambientMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient");
-		std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
-		std::vector<std::shared_ptr<Texture2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
+		std::vector<std::shared_ptr<TextureMap2D>> ambientMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient");
+		std::vector<std::shared_ptr<TextureMap2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
+		std::vector<std::shared_ptr<TextureMap2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
 		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
@@ -87,9 +87,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	return Mesh(vertices, indices, textures);
 }
 
-std::vector<std::shared_ptr<Texture2D>> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
+std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
 {
-	std::vector<std::shared_ptr<Texture2D>> textures;
+	std::vector<std::shared_ptr<TextureMap2D>> textures;
 
 	for (unsigned int i = 0; i < material->GetTextureCount(type); i++) {
 		aiString str;
@@ -107,13 +107,12 @@ std::vector<std::shared_ptr<Texture2D>> Model::loadMaterialTextures(aiMaterial* 
 
 		if (!skip) {
 			std::string path = directory + '/' + name;
-			Texture2D texture = Texture2D(
-				path.c_str(),
+			TextureMap2D texture = TextureMap2D(
+				path.c_str(), name, typeName, 0,
 				GL_REPEAT, GL_REPEAT,
-				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 0,
-				GL_UNSIGNED_BYTE, name, typeName
+				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR
 			);
-			std::shared_ptr<Texture2D> tex = std::make_shared<Texture2D>(std::move(texture));
+			std::shared_ptr<TextureMap2D> tex = std::make_shared<TextureMap2D>(std::move(texture));
 			loadedTextures.emplace_back(tex);
 			textures.emplace_back(tex);
 		}
