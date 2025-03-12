@@ -100,16 +100,15 @@ int main()
 	}
 
 	// Create framebuffers
-	std::shared_ptr<Framebuffer> intermediateFBO = std::make_shared<Framebuffer>(
-		Framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, nullptr)
-	);
+	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
+	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// intermediate color texture
 
-	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO);
+	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
 	opaqueFBO.attachRenderbuffer(RBOType::DEPTH);							// opaque depth texture
 	opaqueFBO.configureColorAttachments();
 
-	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO);
+	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
 	transparentFBO.attachRenderbuffer(RBOType::DEPTH);						// opaque depth texture
@@ -203,12 +202,14 @@ int main()
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		sceneDraw(vase, opaqueShader, model);
 
+		opaqueFBO.transferColorTexture(intermediateFBO, 0);
+		opaqueFBO.transferRenderbuffer(transparentFBO);
+
 		// Post-render settings
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
 
 		// Transparent render pass
-		opaqueFBO.transferRenderbuffer(transparentFBO);
 		transparentFBO.bind();
 
 		// Pre-render settings
@@ -301,7 +302,7 @@ int main()
 		glDisable(GL_BLEND);
 
 		// Post-processing blending pass
-		opaqueFBO.bind();
+		intermediateFBO.bind();
 
 		// Pre-render settings
 		glEnable(GL_DEPTH_TEST);
@@ -310,7 +311,6 @@ int main()
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// Render drawcalls
-		transparentFBO.resolve();
 		screenQuad.draw(blendShader, std::vector<ScreenQuadTexture>{
 			{"accumTexture", transparentFBO, 0 },
 			{ "revealTexture", transparentFBO, 1 }
@@ -328,9 +328,8 @@ int main()
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		opaqueFBO.resolve();
 		screenQuad.draw(screenShader, std::vector<ScreenQuadTexture>{
-			{"screenTexture", opaqueFBO, 0}
+			{"screenTexture", intermediateFBO, 0}
 		});
 
 		// Swap buffers and poll IO events

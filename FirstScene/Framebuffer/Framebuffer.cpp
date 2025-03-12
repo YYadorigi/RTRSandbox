@@ -1,7 +1,7 @@
 #include "Framebuffer.h"
 
-Framebuffer::Framebuffer(unsigned int width, unsigned int height, std::shared_ptr<Framebuffer> intermediateFBO, bool msaa) :
-	width(width), height(height), intermediateFBO(intermediateFBO), msaa(msaa), renderbuffer(Renderbuffer())
+Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool msaa) :
+	width(width), height(height), msaa(msaa), renderbuffer(Renderbuffer())
 {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -37,16 +37,6 @@ void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int f
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture.getID(), 0);
 		colorAttachments.emplace_back(std::move(texture));
 	}
-
-	RenderTexture2D texture = RenderTexture2D(
-		width, height, internalFormat, format, dataType,
-		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-		GL_LINEAR, GL_LINEAR
-	);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO->FBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture.getID(), 0);
-	intermediateFBO->colorAttachments.emplace_back(std::move(texture));
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -86,20 +76,16 @@ void Framebuffer::configureColorAttachments()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::resolve()
+void Framebuffer::transferColorTexture(Framebuffer& other, unsigned int index) const
 {
 	int currentFBO;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO->FBO);
-
-	for (unsigned int idx{}; const auto & texture : colorAttachments) {
-		glReadBuffer(GL_COLOR_ATTACHMENT0 + idx);
-		glDrawBuffer(GL_COLOR_ATTACHMENT0 + idx);
-		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		++idx;
-	}
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, other.FBO);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
+	glBlitFramebuffer(0, 0, width, height, 0, 0, other.width, other.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, currentFBO);
 }
@@ -123,5 +109,5 @@ void Framebuffer::transferRenderbuffer(Framebuffer& other) const
 
 void Framebuffer::bindColorTexture(unsigned int index) const
 {
-	intermediateFBO->colorAttachments[++index].bind();
+	colorAttachments[index].bind();
 }

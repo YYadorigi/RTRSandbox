@@ -1,9 +1,7 @@
 #version 400 core
-in vec2 texCoords;
-
 out vec4 FragColor;
 
-uniform sampler2D screenTexture;
+uniform sampler2DMS screenTexture;
 uniform float offset = 1.0 / 300.0;
 
 void main()
@@ -30,7 +28,8 @@ void main()
 
     for (int i = 0; i < 9; i++)
     {
-        sampleTex[i] = vec3(texture(screenTexture, texCoords + offsets[i]));
+        ivec2 coord = ivec2(gl_FragCoord.xy) + ivec2(offsets[i] * ivec2(1.0));
+        sampleTex[i] = texelFetch(screenTexture, coord, gl_SampleID).rgb;
     }
 
     vec3 col = vec3(0.0);

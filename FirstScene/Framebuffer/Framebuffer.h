@@ -8,12 +8,12 @@
 class Framebuffer
 {
 public:
-	Framebuffer(unsigned int width, unsigned int height, std::shared_ptr<Framebuffer> intermediateFBO, bool msaa = false);
+	Framebuffer(unsigned int width, unsigned int height, bool msaa = false);
 	void attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType);
 	void attachRenderbuffer(RBOType type);
 	void configureColorAttachments();
 	inline void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, FBO); }
-	void resolve();
+	void transferColorTexture(Framebuffer& other, unsigned int index) const;
 	void transferRenderbuffer(Framebuffer& other) const;
 	void bindColorTexture(unsigned int index) const;
 private:
@@ -23,5 +23,4 @@ private:
 	std::vector<RenderTexture2D> colorAttachments;
 	unsigned int attachmentCount = 0;
 	Renderbuffer renderbuffer;
-	std::shared_ptr<Framebuffer> intermediateFBO;
 };

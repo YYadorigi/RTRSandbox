@@ -1,11 +1,9 @@
 #version 400 core
-in vec2 texCoords;
-
 out vec4 FragColor;
 
-uniform sampler2D screenTexture;
+uniform sampler2DMS screenTexture;
 
 void main()
 {
-	FragColor = texture(screenTexture, texCoords);
+	FragColor = texelFetch(screenTexture, ivec2(gl_FragCoord.xy), gl_SampleID);
 }
