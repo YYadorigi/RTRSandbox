@@ -109,7 +109,7 @@ int main()
 	opaqueFBO.attachRenderbuffer(RBOType::DEPTH);							// opaque depth texture
 	opaqueFBO.configureColorAttachments();
 
-	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO, true);
+	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
 	transparentFBO.attachRenderbuffer(RBOType::DEPTH);						// opaque depth texture

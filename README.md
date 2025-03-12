@@ -16,7 +16,9 @@ Then run `build.bat` and build it in Microsoft Visual Studio.
 
 [McGuire & Bavoil, Weighted Blended Order-Independent Transparency, JCGT 2013]: https://www.jcgt.org/published/0002/02/09/
 
-![OIT](https://github.com/YYadorigi/RTRSandbox/blob/main/README/weighted_blended_OIT.png)
+![OIT](https://github.com/YYadorigi/RTRSandbox/blob/main/README/weighted_blended_OIT_1.png)
+
+![OIT](https://github.com/YYadorigi/RTRSandbox/blob/main/README/weighted_blended_OIT_2.png)
 
 ## Showcases
 
