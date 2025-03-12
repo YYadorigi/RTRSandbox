@@ -53,31 +53,24 @@ ScreenQuad& ScreenQuad::operator=(ScreenQuad&& other) noexcept
 	return *this;
 }
 
-void ScreenQuad::draw(Framebuffer& framebuffer, unsigned int index) const
+void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture> textures) const
 {
-	glActiveTexture(GL_TEXTURE0);
-	framebuffer.bindColorTexture(index);
+	shader.use();
+	for (unsigned int idx = 1; const auto & texture : textures) {
+		glActiveTexture(GL_TEXTURE0 + idx);
+		texture.framebuffer.bindColorTexture(texture.attachmentIndex);
+		shader.setInt(texture.name.c_str(), idx);
+		++idx;
+	}
 
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void ScreenQuad::drawComposite(Framebuffer& framebuffer, unsigned int first, unsigned int second) const
-{
+	for (unsigned int idx = 1; const auto & texture : textures) {
+		glActiveTexture(GL_TEXTURE0 + idx);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		++idx;
+	}
 	glActiveTexture(GL_TEXTURE0);
-	framebuffer.bindColorTexture(first);
-	glActiveTexture(GL_TEXTURE1);
-	framebuffer.bindColorTexture(second);
-
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	glBindVertexArray(0);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -1,33 +1,44 @@
 #include "Framebuffer.h"
 
-Framebuffer::Framebuffer(unsigned int width, unsigned int height) : width(width), height(height)
+Framebuffer::Framebuffer(unsigned int width, unsigned int height, std::shared_ptr<Framebuffer> intermediateFBO) :
+	width(width), height(height), intermediateFBO(intermediateFBO)
 {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned int dataType, unsigned int filter)
+void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType)
 {
 	unsigned int index = attachmentCount++;
 
 	int maxAttach;
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAttach);
-	if (index >= (unsigned int)maxAttach) {
+	if (index >= static_cast<unsigned int>(maxAttach)) {
 		std::cerr << "Exceeded maximum number of color attachments" << std::endl;
 		return;
 	}
 
-	RenderTexture2D texture = RenderTexture2D(
-		width, height,
-		internalFormat, format, dataType,
+	RenderTexture2D textureMSAA = RenderTexture2D(
+		width, height, internalFormat,
 		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-		filter, filter
+		GL_LINEAR, GL_LINEAR
+	);
+
+	RenderTexture2D texture = RenderTexture2D(
+		width, height, internalFormat, format, dataType,
+		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+		GL_LINEAR, GL_LINEAR
 	);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, textureMSAA.getID(), 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO->FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture.getID(), 0);
-	colorAttachments.emplace_back(std::move(texture));
+
+	colorAttachments.emplace_back(std::move(textureMSAA));
+	intermediateFBO->colorAttachments.emplace_back(std::move(texture));
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -60,7 +71,7 @@ void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::drawBuffers()
+void Framebuffer::configureColorAttachments()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	std::vector<unsigned int> attachments;
@@ -69,4 +80,27 @@ void Framebuffer::drawBuffers()
 	}
 	glDrawBuffers(static_cast<unsigned int>(attachments.size()), attachments.data());
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::resolve()
+{
+	int currentFBO;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO->FBO);
+
+	for (unsigned int idx{}; const auto & texture : colorAttachments) {
+		glReadBuffer(GL_COLOR_ATTACHMENT0 + idx);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0 + idx);
+		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		++idx;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, static_cast<unsigned int>(currentFBO));
+}
+
+void Framebuffer::bindColorTexture(unsigned int index) const
+{
+	intermediateFBO->colorAttachments[index + 1].bind();
 }

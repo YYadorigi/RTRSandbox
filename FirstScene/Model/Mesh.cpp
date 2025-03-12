@@ -76,7 +76,8 @@ void Mesh::draw(Shader& shader)
 			std::cerr << "Unknown texture type" << std::endl;
 			continue;
 		}
-		shader.setInt("material." + texType + number, idx++);
+		shader.setInt("material." + texType + number, idx);
+		++idx;
 	}
 	shader.setFloat("material.shininess", shininess);
 	shader.setFloat("material.opacity", opacity);
@@ -88,6 +89,7 @@ void Mesh::draw(Shader& shader)
 	for (unsigned int idx = 1; const auto & texture: textures) {
 		glActiveTexture(GL_TEXTURE0 + idx);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		++idx;
 	}
 	glActiveTexture(GL_TEXTURE0);
 }

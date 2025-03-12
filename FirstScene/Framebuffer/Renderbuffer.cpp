@@ -19,7 +19,7 @@ Renderbuffer::Renderbuffer(unsigned int width, unsigned int height, RBOType type
 		default:
 			break;
 	}
-	glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, format, width, height);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 

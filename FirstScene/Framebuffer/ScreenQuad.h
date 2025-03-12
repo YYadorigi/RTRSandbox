@@ -1,10 +1,18 @@
 #pragma once
+#include <vector>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Shader/Shader.h"
 #include "Framebuffer.h"
+
+struct ScreenQuadTexture
+{
+	std::string name;
+	Framebuffer& framebuffer;
+	unsigned int attachmentIndex;
+};
 
 class ScreenQuad
 {
@@ -15,8 +23,7 @@ public:
 	ScreenQuad& operator=(const ScreenQuad& other) = delete;
 	ScreenQuad(ScreenQuad&& other) noexcept;
 	ScreenQuad& operator=(ScreenQuad&& other) noexcept;
-	void draw(Framebuffer& framebuffer, unsigned int index) const;
-	void drawComposite(Framebuffer& framebuffer, unsigned int first, unsigned int second) const;
+	void draw(Shader& shader, std::vector<ScreenQuadTexture> textures) const;
 private:
 	unsigned int VAO, VBO;
 };

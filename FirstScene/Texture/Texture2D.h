@@ -23,6 +23,8 @@ private:
 class RenderTexture2D : public Texture
 {
 public:
+	RenderTexture2D(unsigned int width, unsigned int height, unsigned int internalFormat,
+		unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter);
 	RenderTexture2D(unsigned int width, unsigned int height, unsigned int internalFormat, unsigned int format, unsigned int dataType,
 		unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter);
 	virtual ~RenderTexture2D() override = default;
