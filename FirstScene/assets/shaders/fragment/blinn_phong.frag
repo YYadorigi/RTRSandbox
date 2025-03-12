@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 struct Material
 {
     sampler2D ambient1;
@@ -10,6 +10,7 @@ struct Material
     sampler2D specular2;
     sampler2D specular3;
     float shininess;
+    float opacity;
 };
 
 struct DirLight 
@@ -51,6 +52,8 @@ in vec3 fragPos;
 in vec3 normal;
 in vec2 texCoords;
 
+out vec4 FragColor;
+
 uniform vec3 viewPos;
 uniform Material material;
 uniform DirLight dirLight;
@@ -80,7 +83,7 @@ void main()
     
     result += texture(material.ambient1, texCoords).rgb * ambientLight.intensity * ambientLight.color;
     
-    gl_FragColor = vec4(result, 1.0);
+    FragColor = vec4(result, material.opacity);
 }
 
 // Function definitions

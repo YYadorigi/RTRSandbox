@@ -1,5 +1,7 @@
-#version 330 core
+#version 400 core
 in vec2 texCoords;
+
+out vec4 FragColor;
 
 uniform sampler2D screenTexture;
 uniform float offset = 1.0 / 300.0;
@@ -37,5 +39,5 @@ void main()
         col += sampleTex[i] * kernel[i];
     }
 
-    gl_FragColor = vec4(col, 1.0);
+    FragColor = vec4(col, 1.0);
 }

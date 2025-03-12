@@ -52,3 +52,32 @@ ScreenQuad& ScreenQuad::operator=(ScreenQuad&& other) noexcept
 	}
 	return *this;
 }
+
+void ScreenQuad::draw(Framebuffer& framebuffer, unsigned int index) const
+{
+	glActiveTexture(GL_TEXTURE0);
+	framebuffer.bindColorTexture(index);
+
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void ScreenQuad::drawComposite(Framebuffer& framebuffer, unsigned int first, unsigned int second) const
+{
+	glActiveTexture(GL_TEXTURE0);
+	framebuffer.bindColorTexture(first);
+	glActiveTexture(GL_TEXTURE1);
+	framebuffer.bindColorTexture(second);
+
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindVertexArray(0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}

@@ -38,28 +38,28 @@ DirectionalLight directional = {
 
 Light pointLights[] = {
 	PointLight(
-		glm::vec3(1.0f, 1.0f, 1.0f),	// position
+		glm::vec3(5.0f, 5.0f, 5.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
-		glm::vec3(1.0f, 0.5f, 1.0f),	// color
-		1.0f	// intensity
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		3.0f	// intensity
 	),
 	PointLight(
-		glm::vec3(-1.0f, -1.0f, -2.0f),	// position
+		glm::vec3(-5.0f, 5.0f, 5.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
-		glm::vec3(1.0f, 1.0f, 0.5f),	// color
-		1.0f	// intensity
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		3.0f	// intensity
 	),
 	PointLight(
-		glm::vec3(-1.0f, 1.0f, 1.0f),	// position
+		glm::vec3(0.0f, -5.0f, -5.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
-		glm::vec3(0.5f, 1.0f, 1.0f),	// color
-		1.0f	// intensity
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		3.0f	// intensity
 	)
 };
 
@@ -90,7 +90,7 @@ void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 int main()
 {
 	// Initialize GLFW
-	initOpenGL(3, 3, GLFW_OPENGL_CORE_PROFILE);	// Use OpenGL 3.3 core profile
+	initOpenGL(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION, GLFW_OPENGL_CORE_PROFILE);	// Use OpenGL 4.0 core profile
 
 	// Create window
 	GLFWwindow* window = createWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "FirstScene");
@@ -106,23 +106,41 @@ int main()
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, GL_LINEAR);	// opaque color texture
 	opaqueFBO.attachRenderbuffer(depthRBO);											// opaque depth texture
+	opaqueFBO.drawBuffers();
 
 	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
-	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, GL_LINEAR);	// accum texture
-	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT, GL_LINEAR);				// reveal texture
+	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, GL_LINEAR);	// accumulation texture
+	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT, GL_LINEAR);				// revealge texture
 	transparentFBO.attachRenderbuffer(depthRBO);										// opaque depth texture
-	const unsigned int transparentDrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, transparentDrawBuffers);
+	transparentFBO.drawBuffers();
+
+	// Create screen quad
+	ScreenQuad screenQuad;
 
 	// Load models
 	Model backpack("assets/objects/backpack/backpack.obj");
-	ScreenQuad screenQuad;
-	ScreenQuad rearviewQuad(0.25f, glm::vec2(-0.75f, -0.75f));
+	Model vase("assets/objects/vase/vase.obj");
+	Model vase20("assets/objects/vase_0.2/vase.obj");
+	Model vase35("assets/objects/vase_0.35/vase.obj");
+	Model vase50("assets/objects/vase_0.5/vase.obj");
 
 	// Load shader programs
-	Shader shader = Shader("assets/shaders/vertex/main.vert", "assets/shaders/fragment/blinn_phong.frag");
-	Shader outlineShader = Shader("assets/shaders/vertex/outline.vert", "assets/shaders/fragment/pure_color.frag");
-	Shader postProcessing = Shader("assets/shaders/vertex/screen.vert", "assets/shaders/post_processing/main.frag");
+	Shader opaqueShader = Shader(
+		"assets/shaders/vertex/main.vert",
+		"assets/shaders/fragment/blinn_phong.frag"
+	);
+	Shader transparentShader = Shader(
+		"assets/shaders/vertex/main.vert",
+		"assets/shaders/fragment/blinn_phong_transparent.frag"
+	);
+	Shader blendShader = Shader(
+		"assets/shaders/vertex/screen.vert",
+		"assets/shaders/post_processing/alpha_blending.frag"
+	);
+	Shader screenShader = Shader(
+		"assets/shaders/vertex/screen.vert",
+		"assets/shaders/post_processing/main.frag"
+	);
 
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -137,81 +155,180 @@ int main()
 		// Device input
 		processInput(window);
 
-		// Global shader uniforms
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = camera.getViewMatrix();
-		glm::mat4 projection = camera.getProjectionMatrix();
-
-		shader.use();
-		shader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));	// directional light
-		shader.setVec3("dirLight.color", glm::value_ptr(directional.color));
-		shader.setFloat("dirLight.intensity", directional.intensity);
-
-		for (size_t idx{}; const auto & pointLight : pointLights) {						// point lights
-			std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
-			shader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
-			shader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
-			shader.setFloat(lightName + ".intensity", pointLight.getIntensity());
-		}
-
-		shader.setVec3("spotLight.position", glm::value_ptr(cameraLight.getPosition()));	// spot light
-		shader.setVec3("spotLight.direction", glm::value_ptr(cameraLight.getDirection()));
-		shader.setVec3("spotLight.color", glm::value_ptr(cameraLight.getColor()));
-		shader.setFloat("spotLight.intensity", cameraLight.getIntensity() * float(cameraLightActive));
-		shader.setFloat("spotLight.cutoff", cameraLight.getCutoff());
-		shader.setFloat("spotLight.outerCutoff", cameraLight.getOuterCutoff());
-
-		shader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));			// ambient light
-		shader.setFloat("ambientLight.intensity", ambient.intensity);
+		// Opauqe render pass
+		opaqueFBO.bind();
 
 		// Pre-render settings
-		shader.use();
-		shader.setTransform("view", glm::value_ptr(view));
-		shader.setTransform("projection", glm::value_ptr(projection));
-		shader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
-
-		outlineShader.use();
-		outlineShader.setTransform("view", glm::value_ptr(view));
-		outlineShader.setTransform("projection", glm::value_ptr(projection));
-		outlineShader.setFloat("outlineWidth", 0.03f);
-		outlineShader.setVec3("color", glm::value_ptr(glm::vec3(0.0f, 1.0f, 1.0f)));
-
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
 		glEnable(GL_CULL_FACE);
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Drawcall
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		// Render drawcalls
+		opaqueShader.use();
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, shader, model);
+		opaqueShader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));
+		opaqueShader.setVec3("dirLight.color", glm::value_ptr(directional.color));
+		opaqueShader.setFloat("dirLight.intensity", directional.intensity);
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, shader, model);
+		for (size_t idx{}; const auto & pointLight : pointLights) {
+			std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
+			opaqueShader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
+			opaqueShader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
+			opaqueShader.setFloat(lightName + ".intensity", pointLight.getIntensity());
+		}
 
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		opaqueShader.setVec3("spotLight.position", glm::value_ptr(cameraLight.getPosition()));
+		opaqueShader.setVec3("spotLight.direction", glm::value_ptr(cameraLight.getDirection()));
+		opaqueShader.setVec3("spotLight.color", glm::value_ptr(cameraLight.getColor()));
+		opaqueShader.setFloat("spotLight.intensity", cameraLight.getIntensity() * float(cameraLightActive));
+		opaqueShader.setFloat("spotLight.cutoff", cameraLight.getCutoff());
+		opaqueShader.setFloat("spotLight.outerCutoff", cameraLight.getOuterCutoff());
 
-		// Drawcall
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		opaqueShader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));
+		opaqueShader.setFloat("ambientLight.intensity", ambient.intensity);
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, outlineShader, model);
+		opaqueShader.setTransform("view", glm::value_ptr(camera.getViewMatrix()));
+		opaqueShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
+		opaqueShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, 0.0f));
-		sceneDraw(backpack, outlineShader, model);
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, -1.0f));
+		sceneDraw(backpack, opaqueShader, model);
 
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, -1.0f));
+		sceneDraw(backpack, opaqueShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.5f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase, opaqueShader, model);
 
 		// Post-render settings
 		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_CULL_FACE);
+
+		// Transparent render pass
+		transparentFBO.bind();
+
+		// Pre-render settings
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glEnable(GL_BLEND);
+		glBlendFunci(0, GL_ONE, GL_ONE);					// accumulation blend target
+		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);	// revealge blend target
+		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.0f)));
+		glClearBufferfv(GL_COLOR, 1, glm::value_ptr(glm::vec4(1.0f)));
+
+		// Render drawcalls
+		transparentShader.use();
+
+		transparentShader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));
+		transparentShader.setVec3("dirLight.color", glm::value_ptr(directional.color));
+		transparentShader.setFloat("dirLight.intensity", directional.intensity);
+
+		for (size_t idx{}; const auto & pointLight : pointLights) {
+			std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
+			transparentShader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
+			transparentShader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
+			transparentShader.setFloat(lightName + ".intensity", pointLight.getIntensity());
+		}
+
+		transparentShader.setVec3("spotLight.position", glm::value_ptr(cameraLight.getPosition()));
+		transparentShader.setVec3("spotLight.direction", glm::value_ptr(cameraLight.getDirection()));
+		transparentShader.setVec3("spotLight.color", glm::value_ptr(cameraLight.getColor()));
+		transparentShader.setFloat("spotLight.intensity", cameraLight.getIntensity() * float(cameraLightActive));
+		transparentShader.setFloat("spotLight.cutoff", cameraLight.getCutoff());
+		transparentShader.setFloat("spotLight.outerCutoff", cameraLight.getOuterCutoff());
+
+		transparentShader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));
+		transparentShader.setFloat("ambientLight.intensity", ambient.intensity);
+
+		transparentShader.setTransform("view", glm::value_ptr(camera.getViewMatrix()));
+		transparentShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
+		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase20, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase20, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase20, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, -2.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase35, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase35, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 2.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase35, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, -2.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase50, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase50, transparentShader, model);
+
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		sceneDraw(vase50, transparentShader, model);
+
+		// Post-render settings
+		glDepthMask(GL_TRUE);
+		glDisable(GL_DEPTH_TEST);
+		glBlendFunci(0, GL_ONE, GL_ZERO);
+		glBlendFunci(1, GL_ONE, GL_ZERO);
+		glDisable(GL_BLEND);
+
+		// Post-processing blending pass
+		opaqueFBO.bind();
+
+		// Pre-render settings
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_ALWAYS);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		// Render drawcalls
+		blendShader.use();
+		blendShader.setInt("accumTexture", 0);
+		blendShader.setInt("revealTexture", 1);
+
+		screenQuad.drawComposite(transparentFBO, 0, 1);
+
+		// Post-render settings
+		glDepthFunc(GL_LESS);
+		glDisable(GL_DEPTH_TEST);
+		glBlendFunc(GL_ONE, GL_ZERO);
+		glDisable(GL_BLEND);
+
+		// Draw on screen
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		screenShader.use();
+		screenShader.setInt("screenTexture", 0);
+
+		screenQuad.draw(opaqueFBO, 0);
 
 		// Swap buffers and poll IO events
 		glfwSwapBuffers(window);
@@ -251,7 +368,7 @@ static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int
 		return -1;
 	}
 
-	// Set OpenGL version to 3.3
+	// Set OpenGL version
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, majorVer);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minorVer);
 

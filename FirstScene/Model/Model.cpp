@@ -38,6 +38,8 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	std::vector<std::shared_ptr<TextureMap2D>> textures;
+	float shininess = 0.0f;
+	float opacity = 1.0f;
 
 	bool hasPositions = mesh->HasPositions();
 	bool hasNormals = mesh->HasNormals();
@@ -47,11 +49,11 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	if (!hasPositions || !hasFaces) {
 		std::cerr << "Mesh does not have positions or faces" << std::endl;
-		return Mesh({}, {}, {});
+		return Mesh({}, {}, {}, shininess, opacity);
 	}
 	if (!hasNormals) {
 		std::cerr << "Smooth normals not generated" << std::endl;
-		return Mesh({}, {}, {});
+		return Mesh({}, {}, {}, shininess, opacity);
 	}
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -82,9 +84,11 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+		material->Get(AI_MATKEY_SHININESS, shininess);
+		material->Get(AI_MATKEY_OPACITY, opacity);
 	}
 
-	return Mesh(vertices, indices, textures);
+	return Mesh(vertices, indices, textures, shininess, opacity);
 }
 
 std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)

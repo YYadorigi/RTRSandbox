@@ -17,7 +17,8 @@ struct Vertex
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures);
+	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures,
+		float shininess, float opacity);
 	~Mesh();
 	Mesh(const Mesh& other) = delete;
 	Mesh& operator=(const Mesh& other) = delete;
@@ -30,5 +31,6 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	std::vector<std::shared_ptr<TextureMap2D>> textures;
+	float shininess, opacity;
 	unsigned int VAO, VBO, EBO;
 };

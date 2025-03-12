@@ -15,6 +15,8 @@ public:
 	ScreenQuad& operator=(const ScreenQuad& other) = delete;
 	ScreenQuad(ScreenQuad&& other) noexcept;
 	ScreenQuad& operator=(ScreenQuad&& other) noexcept;
+	void draw(Framebuffer& framebuffer, unsigned int index) const;
+	void drawComposite(Framebuffer& framebuffer, unsigned int first, unsigned int second) const;
 private:
 	unsigned int VAO, VBO;
 };

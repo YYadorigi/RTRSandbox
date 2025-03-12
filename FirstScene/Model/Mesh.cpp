@@ -1,11 +1,9 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures,
+	float shininess, float opacity) :
+	vertices(vertices), indices(indices), textures(textures), shininess(shininess), opacity(opacity)
 {
-	this->vertices = vertices;
-	this->indices = indices;
-	this->textures = textures;
-
 	setupMesh();
 }
 
@@ -21,9 +19,13 @@ Mesh::Mesh(Mesh&& other) noexcept
 	vertices = std::move(other.vertices);
 	indices = std::move(other.indices);
 	textures = std::move(other.textures);
+	shininess = other.shininess;
+	opacity = other.opacity;
 	VAO = other.VAO;
 	VBO = other.VBO;
 	EBO = other.EBO;
+	other.shininess = 0.0f;
+	other.opacity = 0.0f;
 	other.VAO = 0;
 	other.VBO = 0;
 	other.EBO = 0;
@@ -39,9 +41,13 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
 		vertices = std::move(other.vertices);
 		indices = std::move(other.indices);
 		textures = std::move(other.textures);
+		shininess = other.shininess;
+		opacity = other.opacity;
 		VAO = other.VAO;
 		VBO = other.VBO;
 		EBO = other.EBO;
+		other.shininess = 0.0f;
+		other.opacity = 0.0f;
 		other.VAO = 0;
 		other.VBO = 0;
 		other.EBO = 0;
@@ -72,7 +78,8 @@ void Mesh::draw(Shader& shader)
 		}
 		shader.setInt("material." + texType + number, idx++);
 	}
-	shader.setFloat("material.shininess", 32.0f);
+	shader.setFloat("material.shininess", shininess);
+	shader.setFloat("material.opacity", opacity);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);

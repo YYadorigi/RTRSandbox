@@ -11,10 +11,10 @@ void Camera::updateDirection(float offsetX, float offsetY)
 {
 	pitch += offsetY * sensitivity;
 	yaw += offsetX * sensitivity;
-	if (pitch > 89.0f) {
-		pitch = 89.0f;
-	} else if (pitch < -89.0f) {
-		pitch = -89.0f;
+	if (pitch > 60.0f) {
+		pitch = 60.0f;
+	} else if (pitch < -60.0f) {
+		pitch = -60.0f;
 	}
 
 	// Quaternion rotation
