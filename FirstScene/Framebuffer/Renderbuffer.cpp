@@ -1,6 +1,6 @@
 #include "Renderbuffer.h"
 
-Renderbuffer::Renderbuffer(unsigned int width, unsigned int height, RBOType type) :
+Renderbuffer::Renderbuffer(unsigned int width, unsigned int height, RBOType type, bool msaa) :
 	width(width), height(height), type(type)
 {
 	glGenRenderbuffers(1, &RBO);
@@ -19,7 +19,11 @@ Renderbuffer::Renderbuffer(unsigned int width, unsigned int height, RBOType type
 		default:
 			break;
 	}
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, format, width, height);
+	if (msaa) {
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, format, width, height);
+	} else {
+		glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+	}
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 

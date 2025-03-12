@@ -100,23 +100,19 @@ int main()
 	}
 
 	// Create framebuffers
-	std::shared_ptr<Renderbuffer> depthRBO = std::make_shared<Renderbuffer>(
-		Renderbuffer(SCREEN_WIDTH, SCREEN_HEIGHT, RBOType::DEPTH)
-	);
-
 	std::shared_ptr<Framebuffer> intermediateFBO = std::make_shared<Framebuffer>(
 		Framebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, nullptr)
 	);
 
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO);
-	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// opaque color texture
-	opaqueFBO.attachRenderbuffer(depthRBO);								// opaque depth texture
+	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
+	opaqueFBO.attachRenderbuffer(RBOType::DEPTH);							// opaque depth texture
 	opaqueFBO.configureColorAttachments();
 
-	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO);
+	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, intermediateFBO, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
-	transparentFBO.attachRenderbuffer(depthRBO);							// opaque depth texture
+	transparentFBO.attachRenderbuffer(RBOType::DEPTH);						// opaque depth texture
 	transparentFBO.configureColorAttachments();
 
 	// Create screen quad
@@ -212,6 +208,7 @@ int main()
 		glDisable(GL_CULL_FACE);
 
 		// Transparent render pass
+		opaqueFBO.transferRenderbuffer(transparentFBO);
 		transparentFBO.bind();
 
 		// Pre-render settings
@@ -327,6 +324,7 @@ int main()
 
 		// Draw on screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
