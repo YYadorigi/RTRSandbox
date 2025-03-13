@@ -100,9 +100,6 @@ int main()
 	}
 
 	// Create framebuffers
-	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
-	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// intermediate color texture
-
 	std::shared_ptr<Renderbuffer> depthRBO = std::make_shared<Renderbuffer>(
 		SCREEN_WIDTH, SCREEN_HEIGHT, RBOType::DEPTH, true
 	);
@@ -206,8 +203,6 @@ int main()
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		sceneDraw(vase, opaqueShader, model);
 
-		opaqueFBO.blitColorTexture(0, intermediateFBO, 0);
-
 		// Post-render settings
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
@@ -305,7 +300,7 @@ int main()
 		glDisable(GL_BLEND);
 
 		// Post-processing blending pass
-		intermediateFBO.bind();
+		opaqueFBO.bind();
 
 		// Pre-render settings
 		glEnable(GL_DEPTH_TEST);
@@ -332,7 +327,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		screenQuad.draw(screenShader, std::vector<ScreenQuadTexture>{
-			{"screenTexture", intermediateFBO, 0}
+			{"screenTexture", opaqueFBO, 0}
 		});
 
 		// Swap buffers and poll IO events

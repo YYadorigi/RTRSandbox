@@ -62,10 +62,17 @@ uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLight;
 uniform AmbientLight ambientLight;
 
+const float EXCEED = 2.0;
+
 // Function prototypes
 vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+
+float maxVec3(vec3 v)
+{
+    return max(max(v.x, v.y), v.z);
+}
 
 void main()
 {
@@ -83,6 +90,10 @@ void main()
     result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
     
     result += texture(material.ambient1, texCoords).rgb * ambientLight.intensity * ambientLight.color;
+
+    if (maxVec3(abs(result.rgb)) > EXCEED) {
+        discard;
+    }
     
     vec4 color = vec4(result, material.opacity);
 

@@ -10,6 +10,7 @@ class Framebuffer
 public:
 	Framebuffer(unsigned int width, unsigned int height, bool msaa = false);
 	void attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType);
+	void attachColorTexture(std::shared_ptr<RenderTexture2D> texture);
 	void attachRenderbuffer(RBOType type);
 	void attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer);
 	void configureColorAttachments();
@@ -21,7 +22,7 @@ private:
 	unsigned int FBO;
 	unsigned int width, height;
 	bool msaa;
-	std::vector<RenderTexture2D> colorAttachments;
+	std::vector<std::shared_ptr<RenderTexture2D>> colorAttachments;
 	unsigned int attachmentCount = 0;
 	std::shared_ptr<Renderbuffer> renderbuffer;
 };

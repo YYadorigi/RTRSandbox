@@ -21,23 +21,39 @@ void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int f
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	if (msaa) {
-		RenderTexture2D textureMSAA = RenderTexture2D(
+		std::shared_ptr<RenderTexture2D> textureMSAA = std::make_shared<RenderTexture2D>(
 			width, height, internalFormat,
 			GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
 			GL_LINEAR, GL_LINEAR
 		);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, textureMSAA.getID(), 0);
-		colorAttachments.emplace_back(std::move(textureMSAA));
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, textureMSAA->getID(), 0);
+		colorAttachments.emplace_back(textureMSAA);
 	} else {
-		RenderTexture2D texture = RenderTexture2D(
+		std::shared_ptr<RenderTexture2D> texture = std::make_shared<RenderTexture2D>(
 			width, height, internalFormat, format, dataType,
 			GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
 			GL_LINEAR, GL_LINEAR
 		);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture.getID(), 0);
-		colorAttachments.emplace_back(std::move(texture));
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->getID(), 0);
+		colorAttachments.emplace_back(texture);
 	}
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::attachColorTexture(std::shared_ptr<RenderTexture2D> texture)
+{
+	unsigned int index = attachmentCount++;
+	int maxAttach;
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAttach);
+	if (index >= static_cast<unsigned int>(maxAttach)) {
+		std::cerr << "Exceeded maximum number of color attachments" << std::endl;
+		return;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->getID(), 0);
+	colorAttachments.emplace_back(texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -131,5 +147,5 @@ void Framebuffer::blitRenderbuffer(Framebuffer& other) const
 
 void Framebuffer::bindColorTexture(unsigned int index) const
 {
-	colorAttachments[index].bind();
+	colorAttachments[index]->bind();
 }
