@@ -1,7 +1,7 @@
 #include "Framebuffer.h"
 
 Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool msaa) :
-	width(width), height(height), msaa(msaa), renderbuffer(Renderbuffer())
+	width(width), height(height), msaa(msaa)
 {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -43,7 +43,7 @@ void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int f
 
 void Framebuffer::attachRenderbuffer(RBOType type)
 {
-	Renderbuffer renderbuffer = Renderbuffer(width, height, type, msaa);
+	std::shared_ptr<Renderbuffer> renderbuffer = std::make_shared<Renderbuffer>(width, height, type, msaa);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	unsigned int attachment = 0;
@@ -60,8 +60,30 @@ void Framebuffer::attachRenderbuffer(RBOType type)
 		default:
 			break;
 	}
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer.getID());
-	this->renderbuffer = std::move(renderbuffer);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer->getID());
+	this->renderbuffer = renderbuffer;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	unsigned int attachment = 0;
+	switch (renderbuffer->getType()) {
+		case RBOType::DEPTH:
+			attachment = GL_DEPTH_ATTACHMENT;
+			break;
+		case RBOType::STENCIL:
+			attachment = GL_STENCIL_ATTACHMENT;
+			break;
+		case RBOType::DEPTH_AND_STENCIL:
+			attachment = GL_DEPTH_STENCIL_ATTACHMENT;
+			break;
+		default:
+			break;
+	}
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer->getID());
+	this->renderbuffer = renderbuffer;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -76,21 +98,21 @@ void Framebuffer::configureColorAttachments()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::transferColorTexture(Framebuffer& other, unsigned int index) const
+void Framebuffer::blitColorTexture(unsigned int selfIndex, Framebuffer& other, unsigned int otherIndex) const
 {
 	int currentFBO;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, other.FBO);
-	glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0 + index);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + selfIndex);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + otherIndex);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, other.width, other.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, currentFBO);
 }
 
-void Framebuffer::transferRenderbuffer(Framebuffer& other) const
+void Framebuffer::blitRenderbuffer(Framebuffer& other) const
 {
 	int currentFBO;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);

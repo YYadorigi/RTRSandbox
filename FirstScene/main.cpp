@@ -103,15 +103,19 @@ int main()
 	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// intermediate color texture
 
+	std::shared_ptr<Renderbuffer> depthRBO = std::make_shared<Renderbuffer>(
+		SCREEN_WIDTH, SCREEN_HEIGHT, RBOType::DEPTH, true
+	);
+
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
-	opaqueFBO.attachRenderbuffer(RBOType::DEPTH);							// opaque depth texture
+	opaqueFBO.attachRenderbuffer(depthRBO);									// opaque depth texture
 	opaqueFBO.configureColorAttachments();
 
 	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
-	transparentFBO.attachRenderbuffer(RBOType::DEPTH);						// opaque depth texture
+	transparentFBO.attachRenderbuffer(depthRBO);							// opaque depth texture
 	transparentFBO.configureColorAttachments();
 
 	// Create screen quad
@@ -202,8 +206,7 @@ int main()
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		sceneDraw(vase, opaqueShader, model);
 
-		opaqueFBO.transferColorTexture(intermediateFBO, 0);
-		opaqueFBO.transferRenderbuffer(transparentFBO);
+		opaqueFBO.blitColorTexture(0, intermediateFBO, 0);
 
 		// Post-render settings
 		glDisable(GL_DEPTH_TEST);

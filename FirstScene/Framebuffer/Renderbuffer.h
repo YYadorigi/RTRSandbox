@@ -13,7 +13,6 @@ enum class RBOType
 class Renderbuffer
 {
 public:
-	Renderbuffer() = default;
 	Renderbuffer(unsigned int width, unsigned int height, RBOType type, bool msaa = false);
 	~Renderbuffer();
 	Renderbuffer(const Renderbuffer& other) = delete;
