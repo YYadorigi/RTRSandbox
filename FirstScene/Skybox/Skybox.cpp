@@ -8,8 +8,8 @@ Skybox::Skybox(const char* path, unsigned int mipmapLevel, bool flipY)
 		pathStr + '/' + std::string("left.jpg"),
 		pathStr + '/' + std::string("top.jpg"),
 		pathStr + '/' + std::string("bottom.jpg"),
-		pathStr + '/' + std::string("back.jpg"),
 		pathStr + '/' + std::string("front.jpg"),
+		pathStr + '/' + std::string("back.jpg"),
 	};
 
 	cubeMap = std::make_shared<CubeMap>(
@@ -110,7 +110,6 @@ void Skybox::draw(Shader& shader)
 {
 	shader.use();
 	cubeMap->bind();
-	shader.setInt("skybox", cubeMap->getID());
 
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);

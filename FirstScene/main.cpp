@@ -126,7 +126,7 @@ int main()
 	ScreenQuad screenQuad;
 
 	// Load skybox
-	Skybox skybox("assets/skybox", 0, true);
+	Skybox skybox("assets/skybox", 0);
 
 	// Load models
 	Model backpack("assets/objects/backpack/backpack.obj", true);
@@ -221,7 +221,7 @@ int main()
 		glDepthFunc(GL_LEQUAL);
 
 		skyboxShader.use();
-		skyboxShader.setTransform("view", glm::value_ptr(glm::mat4(glm::mat3(camera.getViewMatrix()))));	// remove translation
+		skyboxShader.setTransform("view", glm::value_ptr(camera.getViewMatrix()));
 		skyboxShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
 
 		skybox.draw(skyboxShader);
