@@ -14,7 +14,7 @@ protected:
 	Texture& operator=(const Texture& other) = delete;
 	Texture(Texture&& other) noexcept;
 	Texture& operator=(Texture&& other) noexcept;
-	void setWrapParameters(unsigned int wrapS, unsigned int wrapT) const;
+	void setWrapParameters(unsigned int wrapS, unsigned int wrapT, unsigned int wrapR = NULL) const;
 	void setFilterParameters(unsigned int minFilter, unsigned int magFilter) const;
 protected:
 	unsigned int ID;

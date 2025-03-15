@@ -31,10 +31,13 @@ Texture& Texture::operator=(Texture&& other) noexcept
 	return *this;
 }
 
-void Texture::setWrapParameters(unsigned int wrapS, unsigned int wrapT) const
+void Texture::setWrapParameters(unsigned int wrapS, unsigned int wrapT, unsigned int wrapR) const
 {
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapT);
+	if (wrapR) {
+		glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapR);
+	}
 }
 
 void Texture::setFilterParameters(unsigned int minFilter, unsigned int magFilter) const

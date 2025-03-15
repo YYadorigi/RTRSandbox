@@ -1,6 +1,6 @@
 #include "Model.h"
 
-Model::Model(const std::string& path)
+Model::Model(const std::string& path, bool flipY) : flipY(flipY)
 {
 	Assimp::Importer import;
 	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
@@ -112,9 +112,9 @@ std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMateria
 		if (!skip) {
 			std::string path = directory + '/' + name;
 			TextureMap2D texture = TextureMap2D(
-				path.c_str(), name, typeName, 0,
-				GL_REPEAT, GL_REPEAT,
-				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR
+				path.c_str(), name, typeName,
+				0, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, flipY
 			);
 			std::shared_ptr<TextureMap2D> tex = std::make_shared<TextureMap2D>(std::move(texture));
 			loadedTextures.emplace_back(tex);

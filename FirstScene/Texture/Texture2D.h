@@ -7,7 +7,7 @@ class TextureMap2D : public Texture
 {
 public:
 	TextureMap2D(const char* path, std::string name, std::string type, unsigned int mipmapLevel,
-		unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter);
+		unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter, bool flipY = false);
 	virtual ~TextureMap2D() override = default;
 	TextureMap2D(const TextureMap2D& other) = delete;
 	TextureMap2D& operator=(const TextureMap2D& other) = delete;

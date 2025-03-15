@@ -1,8 +1,10 @@
 #version 400 core
+in vec2 texCoords;
+
 out vec4 FragColor;
 
-uniform sampler2DMS accumTexture;
-uniform sampler2DMS revealTexture;
+uniform sampler2D accumTexture;
+uniform sampler2D revealTexture;
 
 const float EPSILON = 0.00001f;
 
@@ -18,13 +20,13 @@ float maxVec3(vec3 v)
 
 void main()
 {
-    float revealage = texelFetch(revealTexture, ivec2(gl_FragCoord.xy), gl_SampleID).r;
+    float revealage = texture(revealTexture, texCoords).r;
 
     if (approx(revealage, 1.0f)) {
         discard;
     }
 
-    vec4 accumulation = texelFetch(accumTexture, ivec2(gl_FragCoord.xy), gl_SampleID);
+    vec4 accumulation = texture(accumTexture, texCoords);
 
     if (isinf(maxVec3(abs(accumulation.rgb)))) {
         accumulation.rgb = vec3(accumulation.a);

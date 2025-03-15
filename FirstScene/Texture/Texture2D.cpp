@@ -1,18 +1,19 @@
+#define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include "Texture2D.h"
 
 TextureMap2D::TextureMap2D(const char* path, std::string name, std::string type, unsigned int mipmapLevel,
-	unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter)
+	unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter, bool flipY)
 	: Texture(GL_TEXTURE_2D), name(name), type(type)
 {
 	int width, height, nrChannels;
 
-	stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(flipY);
 
 	unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
 	if (data) {
-		GLenum format = GL_RGB;
+		unsigned int format = GL_RGB;
 		if (nrChannels == 1)
 			format = GL_RED;
 		else if (nrChannels == 3)

@@ -103,12 +103,12 @@ void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::configureColorAttachments()
+void Framebuffer::configureColorAttachments(std::vector<unsigned int> indices) const
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	std::vector<unsigned int> attachments;
-	for (unsigned int idx{}; idx < colorAttachments.size(); idx++) {
-		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + idx);
+	for (const auto& index : indices) {
+		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + index);
 	}
 	glDrawBuffers(static_cast<unsigned int>(attachments.size()), attachments.data());
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

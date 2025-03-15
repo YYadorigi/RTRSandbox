@@ -10,7 +10,7 @@
 class Model
 {
 public:
-	Model(const std::string& path);
+	Model(const std::string& path, bool flipY = false);
 	void draw(Shader& shader);
 private:
 	void processNode(aiNode* node, const aiScene* scene);
@@ -20,4 +20,5 @@ private:
 	std::vector<Mesh> meshes;
 	std::vector<std::shared_ptr<TextureMap2D>> loadedTextures;
 	std::string directory;
+	bool flipY;
 };

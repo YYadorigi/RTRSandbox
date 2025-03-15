@@ -1,4 +1,5 @@
 #include <iostream>
+#include <array>
 #include <vector>
 #include <unordered_map>
 #include <glm/glm.hpp>
@@ -11,6 +12,7 @@
 #include "Viewer/Camera.h"
 #include "Viewer/Light.h"
 #include "Model/Model.h"
+#include "Skybox/Skybox.h"
 #include "Framebuffer/Renderbuffer.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
@@ -107,25 +109,37 @@ int main()
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
 	opaqueFBO.attachRenderbuffer(depthRBO);									// opaque depth texture
-	opaqueFBO.configureColorAttachments();
+	opaqueFBO.configureColorAttachments(std::vector<unsigned int>{0});
 
 	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
 	transparentFBO.attachRenderbuffer(depthRBO);							// opaque depth texture
-	transparentFBO.configureColorAttachments();
+	transparentFBO.configureColorAttachments(std::vector<unsigned int>{0, 1});
+
+	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
+	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// opaque color texture
+	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
+	intermediateFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);			// revealge texture
 
 	// Create screen quad
 	ScreenQuad screenQuad;
 
+	// Load skybox
+	Skybox skybox("assets/skybox", 0, true);
+
 	// Load models
-	Model backpack("assets/objects/backpack/backpack.obj");
+	Model backpack("assets/objects/backpack/backpack.obj", true);
 	Model vase("assets/objects/vase/vase.obj");
 	Model vase20("assets/objects/vase_0.2/vase.obj");
 	Model vase35("assets/objects/vase_0.35/vase.obj");
 	Model vase50("assets/objects/vase_0.5/vase.obj");
 
 	// Load shader programs
+	Shader skyboxShader = Shader(
+		"assets/shaders/vertex/skybox.vert",
+		"assets/shaders/fragment/skybox.frag"
+	);
 	Shader opaqueShader = Shader(
 		"assets/shaders/vertex/main.vert",
 		"assets/shaders/fragment/blinn_phong.frag"
@@ -135,11 +149,11 @@ int main()
 		"assets/shaders/fragment/blinn_phong_transparent.frag"
 	);
 	Shader blendShader = Shader(
-		"assets/shaders/vertex/screen.vert",
-		"assets/shaders/post_processing/alpha_blending.frag"
+		"assets/shaders/vertex/screen_quad.vert",
+		"assets/shaders/blending/weighted_blended.frag"
 	);
 	Shader screenShader = Shader(
-		"assets/shaders/vertex/screen.vert",
+		"assets/shaders/vertex/screen_quad.vert",
 		"assets/shaders/post_processing/main.frag"
 	);
 
@@ -162,8 +176,8 @@ int main()
 		// Pre-render settings
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
+		glClearBufferfv(GL_DEPTH, 0, glm::value_ptr(glm::vec4(1.0f)));
 
 		// Render drawcalls
 		opaqueShader.use();
@@ -202,6 +216,17 @@ int main()
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.5f));
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		sceneDraw(vase, opaqueShader, model);
+
+		// Skybox drawcall
+		glDepthFunc(GL_LEQUAL);
+
+		skyboxShader.use();
+		skyboxShader.setTransform("view", glm::value_ptr(glm::mat4(glm::mat3(camera.getViewMatrix()))));	// remove translation
+		skyboxShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
+
+		skybox.draw(skyboxShader);
+
+		glDepthFunc(GL_LESS);
 
 		// Post-render settings
 		glDisable(GL_DEPTH_TEST);
@@ -299,8 +324,13 @@ int main()
 		glBlendFunci(1, GL_ONE, GL_ZERO);
 		glDisable(GL_BLEND);
 
-		// Post-processing blending pass
-		opaqueFBO.bind();
+		// Blending pass
+		opaqueFBO.blitColorTexture(0, intermediateFBO, 0);
+		transparentFBO.blitColorTexture(0, intermediateFBO, 1);
+		transparentFBO.blitColorTexture(1, intermediateFBO, 2);
+
+		intermediateFBO.configureColorAttachments(std::vector<unsigned int>{0});
+		intermediateFBO.bind();
 
 		// Pre-render settings
 		glEnable(GL_DEPTH_TEST);
@@ -310,8 +340,8 @@ int main()
 
 		// Render drawcalls
 		screenQuad.draw(blendShader, std::vector<ScreenQuadTexture>{
-			{"accumTexture", transparentFBO, 0 },
-			{ "revealTexture", transparentFBO, 1 }
+			{"accumTexture", intermediateFBO, 1 },
+			{ "revealTexture", intermediateFBO, 2 }
 		});
 
 		// Post-render settings
@@ -320,14 +350,14 @@ int main()
 		glBlendFunc(GL_ONE, GL_ZERO);
 		glDisable(GL_BLEND);
 
-		// Draw on screen
+		// Post-processing pass
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		screenQuad.draw(screenShader, std::vector<ScreenQuadTexture>{
-			{"screenTexture", opaqueFBO, 0}
+			{"screenTexture", intermediateFBO, 0}
 		});
 
 		// Swap buffers and poll IO events
