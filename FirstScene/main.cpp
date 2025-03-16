@@ -93,7 +93,7 @@ void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 int main()
 {
 	// Initialize GLFW
-	initOpenGL(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION, GLFW_OPENGL_CORE_PROFILE);	// Use OpenGL 4.0 core profile
+	initOpenGL(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION, GLFW_OPENGL_CORE_PROFILE);
 
 	// Create window
 	GLFWwindow* window = createWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "FirstScene");
