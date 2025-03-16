@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include "macro.h"
 #include "Shader/Shader.h"
+#include "Shader/UniformBuffer.h"
 #include "Viewer/Camera.h"
 #include "Viewer/Light.h"
 #include "Model/Model.h"
@@ -31,12 +32,6 @@ static Camera camera = Camera{
 	frustum,
 	5.0f,	// speed
 	0.05f	// sensitivity
-};
-
-DirectionalLight directional = {
-	glm::vec3(-0.2f, -1.0f, -0.3f),	// direction
-	glm::vec3(1.0f),	// color
-	0.25f,	// intensity
 };
 
 Light pointLights[] = {
@@ -90,6 +85,8 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 
+unsigned int uniformOffset(unsigned int increase, bool reset = false);
+
 int main()
 {
 	// Initialize GLFW
@@ -109,13 +106,11 @@ int main()
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
 	opaqueFBO.attachRenderbuffer(depthRBO);									// opaque depth texture
-	opaqueFBO.configureColorAttachments(std::vector<unsigned int>{0});
 
 	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
 	transparentFBO.attachRenderbuffer(depthRBO);							// opaque depth texture
-	transparentFBO.configureColorAttachments(std::vector<unsigned int>{0, 1});
 
 	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
 	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// opaque color texture
@@ -157,6 +152,10 @@ int main()
 		"assets/shaders/post_processing/main.frag"
 	);
 
+	// Create uniform block layouts
+	UniformBuffer viewProjUBO = UniformBuffer(2 * sizeof(glm::mat4));
+	UniformBuffer lightsUBO = UniformBuffer(21 * sizeof(glm::vec4));
+
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
 		// Time logic
@@ -170,8 +169,33 @@ int main()
 		// Device input
 		processInput(window);
 
+		// Update uniform variables
+		viewProjUBO.bind(0);
+		uniformOffset(0, true);
+		viewProjUBO.setData(glm::value_ptr(camera.getViewMatrix()), sizeof(glm::mat4), uniformOffset(sizeof(glm::mat4)));
+		viewProjUBO.setData(glm::value_ptr(camera.getProjectionMatrix()), sizeof(glm::mat4), uniformOffset(sizeof(glm::mat4)));
+
+		lightsUBO.bind(1);
+		uniformOffset(2 * sizeof(glm::vec4), true);
+		for (unsigned int idx{}; const auto & pointLight : pointLights) {
+			lightsUBO.setData(glm::value_ptr(pointLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
+			lightsUBO.setData(glm::value_ptr(pointLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
+			lightsUBO.setData(&static_cast<const float&>(pointLight.getIntensity()), sizeof(float), uniformOffset(sizeof(float)));
+			if (++idx >= MAX_POINT_LIGHTS) break;
+		}
+		uniformOffset((1 + MAX_POINT_LIGHTS) * 2 * sizeof(glm::vec4), true);
+		lightsUBO.setData(glm::value_ptr(cameraLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
+		lightsUBO.setData(glm::value_ptr(cameraLight.getDirection()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
+		lightsUBO.setData(glm::value_ptr(cameraLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
+		lightsUBO.setData(&static_cast<const float&>(cameraLight.getIntensity() * cameraLightActive), sizeof(float), uniformOffset(sizeof(float)));
+		lightsUBO.setData(&static_cast<const float&>(cameraLight.getCutoff()), sizeof(float), uniformOffset(sizeof(float)));
+		lightsUBO.setData(&static_cast<const float&>(cameraLight.getOuterCutoff()), sizeof(float), uniformOffset(sizeof(glm::vec4) - sizeof(float)));
+		lightsUBO.setData(glm::value_ptr(ambient.color), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
+		lightsUBO.setData(&static_cast<const float&>(ambient.intensity), sizeof(float), uniformOffset(sizeof(float)));
+
 		// Opauqe render pass
 		opaqueFBO.bind();
+		opaqueFBO.configureColorAttachments(std::vector<unsigned int>{0});
 
 		// Pre-render settings
 		glEnable(GL_DEPTH_TEST);
@@ -182,29 +206,8 @@ int main()
 		// Render drawcalls
 		opaqueShader.use();
 
-		opaqueShader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));
-		opaqueShader.setVec3("dirLight.color", glm::value_ptr(directional.color));
-		opaqueShader.setFloat("dirLight.intensity", directional.intensity);
-
-		for (size_t idx{}; const auto & pointLight : pointLights) {
-			std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
-			opaqueShader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
-			opaqueShader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
-			opaqueShader.setFloat(lightName + ".intensity", pointLight.getIntensity());
-		}
-
-		opaqueShader.setVec3("spotLight.position", glm::value_ptr(cameraLight.getPosition()));
-		opaqueShader.setVec3("spotLight.direction", glm::value_ptr(cameraLight.getDirection()));
-		opaqueShader.setVec3("spotLight.color", glm::value_ptr(cameraLight.getColor()));
-		opaqueShader.setFloat("spotLight.intensity", cameraLight.getIntensity() * float(cameraLightActive));
-		opaqueShader.setFloat("spotLight.cutoff", cameraLight.getCutoff());
-		opaqueShader.setFloat("spotLight.outerCutoff", cameraLight.getOuterCutoff());
-
-		opaqueShader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));
-		opaqueShader.setFloat("ambientLight.intensity", ambient.intensity);
-
-		opaqueShader.setTransform("view", glm::value_ptr(camera.getViewMatrix()));
-		opaqueShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
+		opaqueShader.setUniformBlock("VPMatrices", 0);
+		opaqueShader.setUniformBlock("Lights", 1);
 		opaqueShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, -1.0f));
@@ -221,8 +224,7 @@ int main()
 		glDepthFunc(GL_LEQUAL);
 
 		skyboxShader.use();
-		skyboxShader.setTransform("view", glm::value_ptr(camera.getViewMatrix()));
-		skyboxShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
+		skyboxShader.setUniformBlock("VPMatrices", 0);
 
 		skybox.draw(skyboxShader);
 
@@ -234,6 +236,7 @@ int main()
 
 		// Transparent render pass
 		transparentFBO.bind();
+		transparentFBO.configureColorAttachments(std::vector<unsigned int>{0, 1});
 
 		// Pre-render settings
 		glEnable(GL_DEPTH_TEST);
@@ -247,29 +250,8 @@ int main()
 		// Render drawcalls
 		transparentShader.use();
 
-		transparentShader.setVec3("dirLight.direction", glm::value_ptr(directional.direction));
-		transparentShader.setVec3("dirLight.color", glm::value_ptr(directional.color));
-		transparentShader.setFloat("dirLight.intensity", directional.intensity);
-
-		for (size_t idx{}; const auto & pointLight : pointLights) {
-			std::string lightName = "pointLights[" + std::to_string(idx++) + "]";
-			transparentShader.setVec3(lightName + ".position", glm::value_ptr(pointLight.getPosition()));
-			transparentShader.setVec3(lightName + ".color", glm::value_ptr(pointLight.getColor()));
-			transparentShader.setFloat(lightName + ".intensity", pointLight.getIntensity());
-		}
-
-		transparentShader.setVec3("spotLight.position", glm::value_ptr(cameraLight.getPosition()));
-		transparentShader.setVec3("spotLight.direction", glm::value_ptr(cameraLight.getDirection()));
-		transparentShader.setVec3("spotLight.color", glm::value_ptr(cameraLight.getColor()));
-		transparentShader.setFloat("spotLight.intensity", cameraLight.getIntensity() * float(cameraLightActive));
-		transparentShader.setFloat("spotLight.cutoff", cameraLight.getCutoff());
-		transparentShader.setFloat("spotLight.outerCutoff", cameraLight.getOuterCutoff());
-
-		transparentShader.setVec3("ambientLight.color", glm::value_ptr(ambient.color));
-		transparentShader.setFloat("ambientLight.intensity", ambient.intensity);
-
-		transparentShader.setTransform("view", glm::value_ptr(camera.getViewMatrix()));
-		transparentShader.setTransform("projection", glm::value_ptr(camera.getProjectionMatrix()));
+		transparentShader.setUniformBlock("VPMatrices", 0);
+		transparentShader.setUniformBlock("Lights", 1);
 		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.0f, 1.0f));
@@ -329,12 +311,10 @@ int main()
 		transparentFBO.blitColorTexture(0, intermediateFBO, 1);
 		transparentFBO.blitColorTexture(1, intermediateFBO, 2);
 
-		intermediateFBO.configureColorAttachments(std::vector<unsigned int>{0});
 		intermediateFBO.bind();
+		intermediateFBO.configureColorAttachments(std::vector<unsigned int>{0});
 
 		// Pre-render settings
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_ALWAYS);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -345,8 +325,6 @@ int main()
 		});
 
 		// Post-render settings
-		glDepthFunc(GL_LESS);
-		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE, GL_ZERO);
 		glDisable(GL_BLEND);
 
@@ -481,4 +459,15 @@ void sceneDraw(Model& model, Shader& shader, glm::mat4 transform)
 	shader.setTransform("model", glm::value_ptr(transform));
 	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
 	model.draw(shader);
+}
+
+unsigned int uniformOffset(unsigned int increase, bool reset)
+{
+	static unsigned int offset = 0;
+	if (reset) {
+		offset = 0;
+	}
+	unsigned int temp = offset;
+	offset += increase;
+	return temp;
 }

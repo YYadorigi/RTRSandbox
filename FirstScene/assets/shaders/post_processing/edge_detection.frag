@@ -1,10 +1,10 @@
 #version 430 core
 in vec2 texCoords;
 
-out vec4 FragColor;
-
 uniform sampler2D screenTexture;
 uniform float offset = 1.0 / 300.0;
+
+out vec4 FragColor;
 
 void main()
 {

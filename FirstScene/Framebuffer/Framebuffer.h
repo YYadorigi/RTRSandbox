@@ -9,6 +9,11 @@ class Framebuffer
 {
 public:
 	Framebuffer(unsigned int width, unsigned int height, bool msaa = false);
+	~Framebuffer();
+	Framebuffer(const Framebuffer& other) = delete;
+	Framebuffer& operator=(const Framebuffer& other) = delete;
+	Framebuffer(Framebuffer&& other) noexcept;
+	Framebuffer& operator=(Framebuffer&& other) noexcept;
 	void attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType);
 	void attachColorTexture(std::shared_ptr<RenderTexture2D> texture);
 	void attachRenderbuffer(RBOType type);

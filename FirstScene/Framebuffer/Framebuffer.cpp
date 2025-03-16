@@ -8,6 +8,48 @@ Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool msaa) :
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+Framebuffer::~Framebuffer()
+{
+	glDeleteFramebuffers(1, &FBO);
+}
+
+Framebuffer::Framebuffer(Framebuffer&& other) noexcept
+{
+	colorAttachments = std::move(other.colorAttachments);
+	renderbuffer = std::move(other.renderbuffer);
+	FBO = other.FBO;
+	width = other.width;
+	height = other.height;
+	msaa = other.msaa;
+	attachmentCount = other.attachmentCount;
+	other.FBO = 0;
+	other.width = 0;
+	other.height = 0;
+	other.msaa = false;
+	other.attachmentCount = 0;
+}
+
+Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept
+{
+	if (this != &other) {
+		glDeleteFramebuffers(1, &FBO);
+
+		colorAttachments = std::move(other.colorAttachments);
+		renderbuffer = std::move(other.renderbuffer);
+		FBO = other.FBO;
+		width = other.width;
+		height = other.height;
+		msaa = other.msaa;
+		attachmentCount = other.attachmentCount;
+		other.FBO = 0;
+		other.width = 0;
+		other.height = 0;
+		other.msaa = false;
+		other.attachmentCount = 0;
+	}
+	return *this;
+}
+
 void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType)
 {
 	unsigned int index = attachmentCount++;
@@ -114,13 +156,11 @@ void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
 
 void Framebuffer::configureColorAttachments(std::vector<unsigned int> indices) const
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	std::vector<unsigned int> attachments;
 	for (const auto& index : indices) {
 		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + index);
 	}
 	glDrawBuffers(static_cast<unsigned int>(attachments.size()), attachments.data());
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Framebuffer::blitColorTexture(unsigned int selfIndex, Framebuffer& other, unsigned int otherIndex) const

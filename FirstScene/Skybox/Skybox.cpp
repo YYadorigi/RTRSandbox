@@ -82,10 +82,9 @@ Skybox::~Skybox()
 
 Skybox::Skybox(Skybox&& other) noexcept
 {
-	cubeMap = other.cubeMap;
+	cubeMap = std::move(other.cubeMap);
 	VAO = other.VAO;
 	VBO = other.VBO;
-	other.cubeMap = nullptr;
 	other.VAO = 0;
 	other.VBO = 0;
 }
@@ -96,10 +95,9 @@ Skybox& Skybox::operator=(Skybox&& other) noexcept
 		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
 
-		cubeMap = other.cubeMap;
+		cubeMap = std::move(other.cubeMap);
 		VAO = other.VAO;
 		VBO = other.VBO;
-		other.cubeMap = nullptr;
 		other.VAO = 0;
 		other.VBO = 0;
 	}

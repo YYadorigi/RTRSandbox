@@ -1,4 +1,8 @@
 #version 430 core
+layout(early_fragment_tests) in;
+
+#define MAX_POINT_LIGHTS 4
+
 struct Material
 {
     sampler2D ambient1;
@@ -19,7 +23,7 @@ struct DirLight
 	
     vec3 color;
     float intensity;
-};
+};  // 48 bytes under std140
 
 struct PointLight 
 {
@@ -27,40 +31,42 @@ struct PointLight
 	
     vec3 color;
     float intensity;
-};
+};  // 48 bytes under std140
 
 struct SpotLight 
 {
     vec3 position;
     vec3 direction;
-    float cutoff;
-    float outerCutoff;    
     
     vec3 color;
     float intensity;
-};
+
+    float cutoff;
+    float outerCutoff;    
+};  // 64 bytes under std140
 
 struct AmbientLight 
 {
     vec3 color;
     float intensity;
-};
-
-#define MAX_POINT_LIGHTS 4
+};  // 32 bytes under std140
 
 in vec3 fragPos;
 in vec3 normal;
 in vec2 texCoords;
 
-layout (location = 0) out vec4 accumulation;
-layout (location = 1) out float revealage;
-
 uniform vec3 viewPos;
 uniform Material material;
-uniform DirLight dirLight;
-uniform PointLight pointLights[MAX_POINT_LIGHTS];
-uniform SpotLight spotLight;
-uniform AmbientLight ambientLight;
+layout (std140) uniform Lights
+{
+    DirLight dirLight;
+    PointLight pointLights[MAX_POINT_LIGHTS];
+    SpotLight spotLight;
+    AmbientLight ambientLight;
+};
+
+layout (location = 0) out vec4 accumulation;
+layout (location = 1) out float revealage;
 
 // Function prototypes
 vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir);

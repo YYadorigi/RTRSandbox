@@ -3,15 +3,18 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNorm;
 layout (location = 2) in vec2 aTexCoords;
 
+uniform mat4 model;
+uniform mat4 invModel;
+layout (std140) uniform VPMatrices 
+{
+    mat4 view;
+    mat4 projection;
+};
+uniform float outlineWidth = 0.03;
+
 out vec3 fragPos;
 out vec3 normal;
 out vec2 texCoords;
-
-uniform mat4 model;
-uniform mat4 invModel;
-uniform mat4 view;
-uniform mat4 projection;
-uniform float outlineWidth = 0.03;
 
 void main()
 {
