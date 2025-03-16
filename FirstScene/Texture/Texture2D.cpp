@@ -55,7 +55,7 @@ TextureMap2D& TextureMap2D::operator=(TextureMap2D&& other) noexcept
 
 RenderTexture2D::RenderTexture2D(unsigned int width, unsigned int height, unsigned int internalFormat,
 	unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter) :
-	Texture(GL_TEXTURE_2D_MULTISAMPLE)
+	Texture(GL_TEXTURE_2D_MULTISAMPLE), multisampled(true)
 {
 	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, internalFormat, width, height, GL_TRUE);
 	setWrapParameters(wrapS, wrapT);
@@ -65,7 +65,7 @@ RenderTexture2D::RenderTexture2D(unsigned int width, unsigned int height, unsign
 
 RenderTexture2D::RenderTexture2D(unsigned int width, unsigned int height, unsigned int internalFormat, unsigned int format,
 	unsigned int dataType, unsigned int wrapS, unsigned int wrapT, unsigned int minFilter, unsigned int magFilter) :
-	Texture(GL_TEXTURE_2D)
+	Texture(GL_TEXTURE_2D), multisampled(false)
 {
 	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, nullptr);
 	setWrapParameters(wrapS, wrapT);

@@ -9,6 +9,6 @@ uniform mat4 projection;
 void main()
 {
     cubeCoords = aPos;
-    vec4 position = projection * mat4(mat3(view)) * vec4(aPos, 1.0);
+    vec4 position = projection * mat4(mat3(view)) * vec4(aPos, 1.0);    // Remove translation
     gl_Position = position.xyww;
 }

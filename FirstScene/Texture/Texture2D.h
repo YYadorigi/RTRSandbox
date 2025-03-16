@@ -32,4 +32,7 @@ public:
 	RenderTexture2D& operator=(const RenderTexture2D& other) = delete;
 	RenderTexture2D(RenderTexture2D&& other) noexcept;
 	RenderTexture2D& operator=(RenderTexture2D&& other) noexcept;
+	inline bool isMultisampled() const { return multisampled; }
+private:
+	bool multisampled;
 };

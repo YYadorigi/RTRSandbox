@@ -51,8 +51,17 @@ void Framebuffer::attachColorTexture(std::shared_ptr<RenderTexture2D> texture)
 		return;
 	}
 
+	if (msaa != texture->isMultisampled()) {
+		std::cerr << "Texture multisampling does not match framebuffer multisampling" << std::endl;
+		return;
+	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->getID(), 0);
+	if (msaa) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, texture->getID(), 0);
+	} else {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->getID(), 0);
+	}
 	colorAttachments.emplace_back(texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
