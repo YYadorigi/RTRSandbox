@@ -82,7 +82,7 @@ void Framebuffer::attachColorTexture(unsigned int internalFormat, unsigned int f
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::attachColorTexture(std::shared_ptr<RenderTexture2D> texture)
+void Framebuffer::attachColorTexture(const std::shared_ptr<RenderTexture2D> texture)
 {
 	unsigned int index = attachmentCount++;
 	int maxAttach;
@@ -131,7 +131,7 @@ void Framebuffer::attachRenderbuffer(RBOType type)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
+void Framebuffer::attachRenderbuffer(const std::shared_ptr<Renderbuffer> renderbuffer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	unsigned int attachment = 0;
@@ -153,7 +153,7 @@ void Framebuffer::attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::configureColorAttachments(std::vector<unsigned int> indices) const
+void Framebuffer::configureColorAttachments(const std::vector<unsigned int>& indices) const
 {
 	std::vector<unsigned int> attachments;
 	for (const auto& index : indices) {
@@ -162,7 +162,16 @@ void Framebuffer::configureColorAttachments(std::vector<unsigned int> indices) c
 	glDrawBuffers(static_cast<unsigned int>(attachments.size()), attachments.data());
 }
 
-void Framebuffer::blitColorTexture(unsigned int selfIndex, Framebuffer& other, unsigned int otherIndex) const
+void Framebuffer::configureColorAttachments(std::vector<unsigned int>&& indices) const
+{
+	std::vector<unsigned int> attachments;
+	for (const auto& index : indices) {
+		attachments.emplace_back(GL_COLOR_ATTACHMENT0 + index);
+	}
+	glDrawBuffers(static_cast<unsigned int>(attachments.size()), attachments.data());
+}
+
+void Framebuffer::blitColorTexture(unsigned int selfIndex, const Framebuffer& other, unsigned int otherIndex) const
 {
 	int currentFBO;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
@@ -176,7 +185,7 @@ void Framebuffer::blitColorTexture(unsigned int selfIndex, Framebuffer& other, u
 	glBindFramebuffer(GL_FRAMEBUFFER, currentFBO);
 }
 
-void Framebuffer::blitRenderbuffer(Framebuffer& other) const
+void Framebuffer::blitRenderbuffer(const Framebuffer& other) const
 {
 	int currentFBO;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);

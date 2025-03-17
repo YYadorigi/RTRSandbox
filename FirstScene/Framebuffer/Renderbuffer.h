@@ -21,7 +21,6 @@ public:
 	Renderbuffer& operator=(Renderbuffer&& other) noexcept;
 	inline unsigned int getID() const { return RBO; }
 	inline RBOType getType() const { return type; }
-	inline std::pair<unsigned int, unsigned int> getSize() const { return { width, height }; }
 private:
 	unsigned int RBO;
 	unsigned int width, height;

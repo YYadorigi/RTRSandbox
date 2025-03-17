@@ -23,6 +23,7 @@ public:
 	Mesh(Mesh&& other) noexcept;
 	Mesh& operator=(Mesh&& other) noexcept;
 	void draw(Shader& shader);
+	void draw(Shader& shader, std::vector<glm::vec3>& translations);
 private:
 	void setupMesh();
 private:

@@ -85,6 +85,8 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 
+void sceneDraw(Model& model, Shader& shader, glm::mat4 transform, std::vector<glm::vec3>& translations);
+
 unsigned int uniformOffset(unsigned int increase, bool reset = false);
 
 int main()
@@ -155,7 +157,7 @@ int main()
 
 	// Create uniform block layouts
 	UniformBuffer viewProjUBO = UniformBuffer(2 * sizeof(glm::mat4));
-	UniformBuffer lightsUBO = UniformBuffer(21 * sizeof(glm::vec4));
+	UniformBuffer lightsUBO = UniformBuffer((7 + 2 * MAX_POINT_LIGHTS) * sizeof(glm::vec4));
 
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -184,7 +186,7 @@ int main()
 			lightsUBO.setData(&static_cast<const float&>(pointLight.getIntensity()), sizeof(float), uniformOffset(sizeof(float)));
 			if (++idx >= MAX_POINT_LIGHTS) break;
 		}
-		uniformOffset((1 + MAX_POINT_LIGHTS) * 2 * sizeof(glm::vec4), true);
+		uniformOffset((2 + 2 * MAX_POINT_LIGHTS) * sizeof(glm::vec4), true);
 		lightsUBO.setData(glm::value_ptr(cameraLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
 		lightsUBO.setData(glm::value_ptr(cameraLight.getDirection()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
 		lightsUBO.setData(glm::value_ptr(cameraLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
@@ -251,50 +253,27 @@ int main()
 		transparentShader.setUniformBlock("Lights", 1);
 		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
+		model = glm::mat4(1.0f);
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase20, transparentShader, model);
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase20, transparentShader, model);
+		std::vector<glm::vec3> translations = {
+			glm::vec3(-2.0f, 0.0f, 1.0f),
+			glm::vec3(-2.0f, 1.5f, 1.0f),
+			glm::vec3(-2.0f, 3.0f, 1.0f),
+			glm::vec3(-2.0f, -1.5f, 1.0f),
+			glm::vec3(-2.0f, -3.0f, 1.0f),
+		};
+		sceneDraw(vase20, transparentShader, model, translations);
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase20, transparentShader, model);
+		for (auto& translation : translations) {
+			translation.x += 2.0f;
+		}
+		sceneDraw(vase35, transparentShader, model, translations);
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, -2.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase35, transparentShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase35, transparentShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 2.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase35, transparentShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, -2.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase50, transparentShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase50, transparentShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(1.2f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase50, transparentShader, model);
+		for (auto& translation : translations) {
+			translation.x += 2.0f;
+		}
+		sceneDraw(vase50, transparentShader, model, translations);
 
 		// Post-render settings
 		glDepthMask(GL_TRUE);
@@ -456,6 +435,14 @@ void sceneDraw(Model& model, Shader& shader, glm::mat4 transform)
 	shader.setTransform("model", glm::value_ptr(transform));
 	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
 	model.draw(shader);
+}
+
+void sceneDraw(Model& model, Shader& shader, glm::mat4 transform, std::vector<glm::vec3>& translations)
+{
+	shader.use();
+	shader.setTransform("model", glm::value_ptr(transform));
+	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
+	model.draw(shader, translations);
 }
 
 unsigned int uniformOffset(unsigned int increase, bool reset)

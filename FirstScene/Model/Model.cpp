@@ -23,6 +23,13 @@ void Model::draw(Shader& shader)
 	}
 }
 
+void Model::draw(Shader& shader, std::vector<glm::vec3>& translations)
+{
+	for (auto& mesh : meshes) {
+		mesh.draw(shader, translations);
+	}
+}
+
 void Model::processNode(aiNode* node, const aiScene* scene)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {

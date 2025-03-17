@@ -55,7 +55,27 @@ ScreenQuad& ScreenQuad::operator=(ScreenQuad&& other) noexcept
 	return *this;
 }
 
-void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture> textures) const
+void ScreenQuad::draw(Shader& shader, const std::vector<ScreenQuadTexture>& textures) const
+{
+	shader.use();
+	for (unsigned int idx{}; const auto & texture : textures) {
+		texture.framebuffer.bindColorTexture(texture.attachmentIndex, idx);
+		shader.setInt(texture.name.c_str(), idx);
+		++idx;
+	}
+
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindVertexArray(0);
+	for (unsigned int idx{}; const auto & texture : textures) {
+		glActiveTexture(GL_TEXTURE0 + idx);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		++idx;
+	}
+}
+
+void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture>&& textures) const
 {
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {

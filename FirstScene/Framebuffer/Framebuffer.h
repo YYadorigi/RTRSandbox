@@ -14,14 +14,19 @@ public:
 	Framebuffer& operator=(const Framebuffer& other) = delete;
 	Framebuffer(Framebuffer&& other) noexcept;
 	Framebuffer& operator=(Framebuffer&& other) noexcept;
+
 	void attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType);
-	void attachColorTexture(std::shared_ptr<RenderTexture2D> texture);
+	void attachColorTexture(const std::shared_ptr<RenderTexture2D> texture);
+
 	void attachRenderbuffer(RBOType type);
-	void attachRenderbuffer(std::shared_ptr<Renderbuffer> renderbuffer);
-	void configureColorAttachments(std::vector<unsigned int> indices) const;
+	void attachRenderbuffer(const std::shared_ptr<Renderbuffer> renderbuffer);
+
+	void configureColorAttachments(const std::vector<unsigned int>& indices) const;
+	void configureColorAttachments(std::vector<unsigned int>&& indices) const;
+
 	inline void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, FBO); }
-	void blitColorTexture(unsigned int selfIndex, Framebuffer& other, unsigned int otherIndex) const;
-	void blitRenderbuffer(Framebuffer& other) const;
+	void blitColorTexture(unsigned int selfIndex, const Framebuffer& other, unsigned int otherIndex) const;
+	void blitRenderbuffer(const Framebuffer& other) const;
 	void bindColorTexture(unsigned int index, unsigned int targetIndex) const;
 private:
 	unsigned int FBO;

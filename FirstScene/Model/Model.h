@@ -11,6 +11,7 @@ class Model
 public:
 	Model(const std::string& path, bool flipY = false);
 	void draw(Shader& shader);
+	void draw(Shader& shader, std::vector<glm::vec3>& translations);
 private:
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);

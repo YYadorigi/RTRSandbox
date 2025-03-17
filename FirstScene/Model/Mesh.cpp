@@ -92,6 +92,58 @@ void Mesh::draw(Shader& shader)
 	}
 }
 
+void Mesh::draw(Shader& shader, std::vector<glm::vec3>& translations)
+{
+	shader.use();
+	unsigned int ambientNr = 0;
+	unsigned int diffuseNr = 0;
+	unsigned int specularNr = 0;
+	for (unsigned int idx{}; const auto & texture: textures) {
+		texture->bind(idx);
+		std::string number;
+		std::string texType = texture->getType();
+		if (texType == "ambient") {
+			number = std::to_string(++ambientNr);
+		} else if (texType == "diffuse") {
+			number = std::to_string(++diffuseNr);
+		} else if (texType == "specular") {
+			number = std::to_string(++specularNr);
+		} else {
+			std::cerr << "Unknown texture type" << std::endl;
+			continue;
+		}
+		shader.setInt("material." + texType + number, idx);
+		++idx;
+	}
+	shader.setFloat("material.shininess", shininess);
+	shader.setFloat("material.opacity", opacity);
+
+	for (unsigned int idx{}; const auto & translation : translations) {
+		shader.setVec3(("offsets[" + std::to_string(idx) + "]"), glm::value_ptr(translation));
+		++idx;
+	}
+
+	glBindVertexArray(VAO);
+
+	unsigned int instanceVBO;
+	glGenBuffers(1, &instanceVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, translations.size() * sizeof(glm::vec3), translations.data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), reinterpret_cast<void*>(0));
+	glEnableVertexAttribArray(3);
+	glVertexAttribDivisor(3, 1);
+
+	glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0, translations.size());
+
+	glBindVertexArray(0);
+	for (unsigned int idx{}; const auto & texture : textures) {
+		glActiveTexture(GL_TEXTURE0 + idx);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		++idx;
+	}
+}
+
 void Mesh::setupMesh()
 {
 	glGenVertexArrays(1, &VAO);
