@@ -121,35 +121,35 @@ int main()
 	ScreenQuad screenQuad;
 
 	// Load skybox
-	Skybox skybox("assets/skybox", 0);
+	Skybox skybox("assets/environment/Skybox", 0);
 
 	// Load models
-	Model backpack("assets/objects/backpack/backpack.obj", true);
-	Model vase("assets/objects/vase/vase.obj");
-	Model vase20("assets/objects/vase_0.2/vase.obj");
-	Model vase35("assets/objects/vase_0.35/vase.obj");
-	Model vase50("assets/objects/vase_0.5/vase.obj");
+	Model backpack("assets/objects/Backpack/Backpack.obj", true);
+	Model vase("assets/objects/Vase/Vase.obj");
+	Model vase20("assets/objects/Vase0.2/Vase.obj");
+	Model vase35("assets/objects/Vase0.35/Vase.obj");
+	Model vase50("assets/objects/Vase0.5/Vase.obj");
 
 	// Load shader programs
 	Shader skyboxShader = Shader(
-		"assets/shaders/vertex/skybox.vert",
-		"assets/shaders/fragment/skybox.frag"
+		"assets/shaders/Effects/Skybox/Skybox.vert",
+		"assets/shaders/Effects/Skybox/Skybox.frag"
 	);
 	Shader opaqueShader = Shader(
-		"assets/shaders/vertex/main.vert",
-		"assets/shaders/fragment/blinn_phong.frag"
+		"assets/shaders/Shading/BlinnPhong/BlinnPhong.vert",
+		"assets/shaders/Shading/BlinnPhong/BlinnPhong.frag"
 	);
 	Shader transparentShader = Shader(
-		"assets/shaders/vertex/main.vert",
-		"assets/shaders/fragment/blinn_phong_transparent.frag"
+		"assets/shaders/Shading/BlinnPhong/BlinnPhong.vert",
+		"assets/shaders/Shading/BlinnPhong/BlinnPhongTransparency.frag"
 	);
 	Shader blendShader = Shader(
-		"assets/shaders/vertex/screen_quad.vert",
-		"assets/shaders/blending/weighted_blended.frag"
+		"assets/shaders/Blending/ScreenQuad.vert",
+		"assets/shaders/Blending/WeightedBlended.frag"
 	);
 	Shader screenShader = Shader(
-		"assets/shaders/vertex/screen_quad.vert",
-		"assets/shaders/post_processing/main.frag"
+		"assets/shaders/PostProcessing/ScreenQuad.vert",
+		"assets/shaders/PostProcessing/Default.frag"
 	);
 
 	// Create uniform block layouts
