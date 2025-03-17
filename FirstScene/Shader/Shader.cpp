@@ -103,7 +103,7 @@ Shader::Shader(const char* vsPath, const char* gsPath, const char* fsPath)
 		// Read files
 		std::stringstream vsStream, gsStream, fsStream;
 		vsStream << vsFile.rdbuf();
-		gsStream << fsFile.rdbuf();
+		gsStream << gsFile.rdbuf();
 		fsStream << fsFile.rdbuf();
 
 		// Close files

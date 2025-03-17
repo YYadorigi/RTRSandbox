@@ -124,6 +124,7 @@ int main()
 	Skybox skybox("assets/environment/Skybox", 0);
 
 	// Load models
+	Model cube("assets/objects/Cube/Cube.obj");
 	Model backpack("assets/objects/Backpack/Backpack.obj", true);
 	Model vase("assets/objects/Vase/Vase.obj");
 	Model vase20("assets/objects/Vase0.2/Vase.obj");
@@ -205,10 +206,12 @@ int main()
 
 		// Render drawcalls
 		opaqueShader.use();
-
 		opaqueShader.setUniformBlock("VPMatrices", 0);
 		opaqueShader.setUniformBlock("Lights", 1);
 		opaqueShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+
+		skyboxShader.use();
+		skyboxShader.setUniformBlock("VPMatrices", 0);
 
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, -1.0f));
 		sceneDraw(backpack, opaqueShader, model);
@@ -222,12 +225,7 @@ int main()
 
 		// Skybox drawcall
 		glDepthFunc(GL_LEQUAL);
-
-		skyboxShader.use();
-		skyboxShader.setUniformBlock("VPMatrices", 0);
-
 		skybox.draw(skyboxShader);
-
 		glDepthFunc(GL_LESS);
 
 		// Post-render settings
@@ -249,7 +247,6 @@ int main()
 
 		// Render drawcalls
 		transparentShader.use();
-
 		transparentShader.setUniformBlock("VPMatrices", 0);
 		transparentShader.setUniformBlock("Lights", 1);
 		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
