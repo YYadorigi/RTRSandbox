@@ -70,7 +70,7 @@ Skybox::Skybox(const char* path, unsigned int mipmapLevel, bool flipY)
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), reinterpret_cast<void*>(0));
 	glEnableVertexAttribArray(0);
 }
 
@@ -107,10 +107,11 @@ Skybox& Skybox::operator=(Skybox&& other) noexcept
 void Skybox::draw(Shader& shader)
 {
 	shader.use();
-	cubeMap->bind();
+	cubeMap->bind(0);
 
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }

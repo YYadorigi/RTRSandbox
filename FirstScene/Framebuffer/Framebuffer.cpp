@@ -33,7 +33,6 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept
 {
 	if (this != &other) {
 		glDeleteFramebuffers(1, &FBO);
-
 		colorAttachments = std::move(other.colorAttachments);
 		renderbuffer = std::move(other.renderbuffer);
 		FBO = other.FBO;
@@ -194,7 +193,7 @@ void Framebuffer::blitRenderbuffer(Framebuffer& other) const
 	glBindFramebuffer(GL_FRAMEBUFFER, currentFBO);
 }
 
-void Framebuffer::bindColorTexture(unsigned int index) const
+void Framebuffer::bindColorTexture(unsigned int index, unsigned int targetIndex) const
 {
-	colorAttachments[index]->bind();
+	colorAttachments[index]->bind(targetIndex);
 }

@@ -1,7 +1,5 @@
 #pragma once
-#include <iostream>
 #include <array>
-#include <glad/glad.h>
 #include "Texture.h"
 
 class CubeMap : public Texture

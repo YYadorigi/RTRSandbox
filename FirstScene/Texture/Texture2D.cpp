@@ -35,20 +35,16 @@ TextureMap2D::TextureMap2D(const char* path, std::string name, std::string type,
 
 TextureMap2D::TextureMap2D(TextureMap2D&& other) noexcept : Texture(std::move(other))
 {
-	name = other.name;
-	type = other.type;
-	other.name = "";
-	other.type = "";
+	name = std::move(other.name);
+	type = std::move(other.type);
 }
 
 TextureMap2D& TextureMap2D::operator=(TextureMap2D&& other) noexcept
 {
 	if (this != &other) {
 		Texture::operator=(std::move(other));
-		name = other.name;
-		type = other.type;
-		other.name = "";
-		other.type = "";
+		name = std::move(other.name);
+		type = std::move(other.type);
 	}
 	return *this;
 }
@@ -74,12 +70,17 @@ RenderTexture2D::RenderTexture2D(unsigned int width, unsigned int height, unsign
 }
 
 RenderTexture2D::RenderTexture2D(RenderTexture2D&& other) noexcept : Texture(std::move(other))
-{}
+{
+	multisampled = other.multisampled;
+	other.multisampled = false;
+}
 
 RenderTexture2D& RenderTexture2D::operator=(RenderTexture2D&& other) noexcept
 {
 	if (this != &other) {
 		Texture::operator=(std::move(other));
+		multisampled = other.multisampled;
+		other.multisampled = false;
 	}
 	return *this;
 }

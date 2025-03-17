@@ -1,6 +1,4 @@
 #pragma once
-#include <iostream>
-#include <glad/glad.h>
 #include "Texture.h"
 
 class TextureMap2D : public Texture

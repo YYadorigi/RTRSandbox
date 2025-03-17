@@ -1,12 +1,13 @@
 #pragma once
 #include <iostream>
+#include <vector>
 #include <glad/glad.h>
 
 class Texture
 {
 public:
 	virtual ~Texture();
-	inline void bind() const { glBindTexture(target, ID); }
+	void bind(unsigned int targetIndex) const;
 	inline unsigned int getID() const { return ID; }
 protected:
 	Texture(unsigned int target);

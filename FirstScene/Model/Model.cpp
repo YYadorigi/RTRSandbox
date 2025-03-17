@@ -12,6 +12,8 @@ Model::Model(const std::string& path, bool flipY) : flipY(flipY)
 	directory = path.substr(0, path.find_last_of('/'));
 
 	processNode(scene->mRootNode, scene);
+
+	loadedTextures.clear();
 }
 
 void Model::draw(Shader& shader)
@@ -25,7 +27,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.emplace_back(processMesh(mesh, scene));
+		meshes.emplace_back(std::move(processMesh(mesh, scene)));
 	}
 
 	for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -66,7 +68,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		} else {
 			vertex.texCoords = glm::vec2(0.0f, 0.0f);
 		}
-		vertices.emplace_back(vertex);
+		vertices.emplace_back(std::move(vertex));
 	}
 
 	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
@@ -78,9 +80,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	if (hasMaterial) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		std::vector<std::shared_ptr<TextureMap2D>> ambientMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient");
-		std::vector<std::shared_ptr<TextureMap2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
-		std::vector<std::shared_ptr<TextureMap2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
+		std::vector<std::shared_ptr<TextureMap2D>> ambientMaps = std::move(loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient"));
+		std::vector<std::shared_ptr<TextureMap2D>> diffuseMaps = std::move(loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse"));
+		std::vector<std::shared_ptr<TextureMap2D>> specularMaps = std::move(loadMaterialTextures(material, aiTextureType_SPECULAR, "specular"));
 		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());

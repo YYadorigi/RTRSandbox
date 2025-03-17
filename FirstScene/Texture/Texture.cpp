@@ -5,6 +5,12 @@ Texture::~Texture()
 	glDeleteTextures(1, &ID);
 }
 
+void Texture::bind(unsigned int targetIndex) const
+{
+	glActiveTexture(GL_TEXTURE0 + targetIndex);
+	glBindTexture(target, ID);
+}
+
 Texture::Texture(unsigned int target) : target(target)
 {
 	glGenTextures(1, &ID);

@@ -22,7 +22,7 @@ public:
 	inline void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, FBO); }
 	void blitColorTexture(unsigned int selfIndex, Framebuffer& other, unsigned int otherIndex) const;
 	void blitRenderbuffer(Framebuffer& other) const;
-	void bindColorTexture(unsigned int index) const;
+	void bindColorTexture(unsigned int index, unsigned int targetIndex) const;
 private:
 	unsigned int FBO;
 	unsigned int width, height;

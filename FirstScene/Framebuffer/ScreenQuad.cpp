@@ -20,10 +20,12 @@ ScreenQuad::ScreenQuad(float scale, glm::vec2 movement)
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), reinterpret_cast<void*>(0));
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), reinterpret_cast<void*>(2 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
 }
 
 ScreenQuad::~ScreenQuad()
@@ -56,9 +58,8 @@ ScreenQuad& ScreenQuad::operator=(ScreenQuad&& other) noexcept
 void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture> textures) const
 {
 	shader.use();
-	for (unsigned int idx = 1; const auto & texture : textures) {
-		glActiveTexture(GL_TEXTURE0 + idx);
-		texture.framebuffer.bindColorTexture(texture.attachmentIndex);
+	for (unsigned int idx{}; const auto & texture : textures) {
+		texture.framebuffer.bindColorTexture(texture.attachmentIndex, idx);
 		shader.setInt(texture.name.c_str(), idx);
 		++idx;
 	}
@@ -67,10 +68,9 @@ void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture> textures) c
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glBindVertexArray(0);
-	for (unsigned int idx = 1; const auto & texture : textures) {
+	for (unsigned int idx{}; const auto & texture : textures) {
 		glActiveTexture(GL_TEXTURE0 + idx);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		++idx;
 	}
-	glActiveTexture(GL_TEXTURE0);
 }
