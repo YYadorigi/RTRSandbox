@@ -51,9 +51,9 @@ struct AmbientLight
     float intensity;
 };  // 16 bytes under std140
 
-in vec3 fragPos;
-in vec3 normal;
-in vec2 texCoords;
+centroid in vec3 fragPos;
+centroid in vec3 normal;
+centroid in vec2 texCoords;
 
 uniform vec3 viewPos;
 uniform Material material;

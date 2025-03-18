@@ -134,12 +134,9 @@ int main()
 	Skybox skybox("assets/environment/Skybox", 0);
 
 	// Load models
-	Model backpack("assets/objects/Backpack/Backpack.obj", true);
 	Model vase("assets/objects/Vase/Vase.obj");
-	Model vase20("assets/objects/Vase0.2/Vase.obj");
-	Model vase35("assets/objects/Vase0.35/Vase.obj");
-	Model vase50("assets/objects/Vase0.5/Vase.obj");
-	Model nerfGun("assets/objects/NerfGun/scene.obj");
+	Model translucentVase("assets/objects/Vase0.5/Vase.obj");
+	Model backpack("assets/objects/Backpack/Backpack.obj", true);
 
 	// Load shader programs
 	Shader skyboxShader = Shader(
@@ -223,18 +220,15 @@ int main()
 		skyboxShader.use();
 		skyboxShader.setUniformBlock("VPMatrices", 0);
 
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.5f, 0.0f, -1.0f));
-		sceneDraw(backpack, opaqueShader, model);
+		glm::mat4 model = glm::mat4(1.0f);
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, -1.0f));
-		sceneDraw(backpack, opaqueShader, model);
+		std::vector<glm::vec3> translations = {
+			glm::vec3(-5.0f, 0.0f, -1.0f),
+			glm::vec3(0.0f, 0.0f, -1.0f),
+			glm::vec3(5.0f, 0.0f, -1.0f),
+		};
 
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 5.0f, 0.0f));
-		sceneDraw(nerfGun, opaqueShader, model);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.5f));
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		sceneDraw(vase, opaqueShader, model);
+		sceneDraw(backpack, opaqueShader, model, translations);
 
 		// Skybox drawcall
 		glDepthFunc(GL_LEQUAL);
@@ -264,27 +258,19 @@ int main()
 		transparentShader.setUniformBlock("Lights", 1);
 		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
-		model = glm::mat4(1.0f);
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-		std::vector<glm::vec3> translations = {
-			glm::vec3(-2.0f, 0.0f, 1.0f),
-			glm::vec3(-2.0f, 1.5f, 1.0f),
-			glm::vec3(-2.0f, 3.0f, 1.0f),
-			glm::vec3(-2.0f, -1.5f, 1.0f),
-			glm::vec3(-2.0f, -3.0f, 1.0f),
-		};
-		sceneDraw(vase20, transparentShader, model, translations);
-
-		for (auto& translation : translations) {
-			translation.x += 2.0f;
+		translations.clear();
+		for (unsigned int xOffset = 0; xOffset < 5; xOffset++) {
+			for (unsigned int yOffset = 0; yOffset < 5; yOffset++) {
+				translations.emplace_back(
+					-3.0f + 1.5f * xOffset,
+					-3.0f + 1.5f * yOffset,
+					1.0f
+				);
+			}
 		}
-		sceneDraw(vase35, transparentShader, model, translations);
-
-		for (auto& translation : translations) {
-			translation.x += 2.0f;
-		}
-		sceneDraw(vase50, transparentShader, model, translations);
+		sceneDraw(translucentVase, transparentShader, model, translations);
 
 		// Post-render settings
 		glDepthMask(GL_TRUE);
