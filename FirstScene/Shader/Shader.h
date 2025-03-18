@@ -8,6 +8,7 @@
 class Shader
 {
 public:
+	Shader(const char* csPath);
 	Shader(const char* vsPath, const char* fsPath);
 	Shader(const char* vsPath, const char* gsPath, const char* fsPath);
 	~Shader();

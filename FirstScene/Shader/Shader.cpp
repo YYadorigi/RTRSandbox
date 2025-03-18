@@ -1,5 +1,65 @@
 #include "Shader.h"
 
+Shader::Shader(const char* csPath)
+{
+	std::string csCode;
+	std::ifstream csFile;
+
+	// Ensure ifstream objects can throw exceptions
+	csFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+	try {
+		// Open shader file
+		csFile.open(csPath, std::ifstream::in);
+
+		// Read file
+		std::stringstream csStream;
+		csStream << csFile.rdbuf();
+
+		// Close file
+		csFile.close();
+
+		// Convert stream to string
+		csCode = csStream.str();
+	} catch (std::ifstream::failure e) {
+		std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+	}
+
+	// Convert string to C string
+	const char* csCodeCStr = csCode.c_str();
+
+	unsigned int cs;
+	int success;
+	char infoLog[512];
+
+	// Compile compute shader
+	cs = glCreateShader(GL_COMPUTE_SHADER);
+	glShaderSource(cs, 1, &csCodeCStr, NULL);
+	glCompileShader(cs);
+
+	// Check for shader compilation errors
+	glGetShaderiv(cs, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(cs, 512, nullptr, infoLog);
+		std::cerr << "ERROR::SHADER::COMPUTE::COMPILATION_FAILED\n" << infoLog << std::endl;
+	};
+
+	// Link shader
+	ID = glCreateProgram();
+	glAttachShader(ID, cs);
+	glLinkProgram(ID);
+
+	// Check for shader program linking errors
+	glGetProgramiv(ID, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(ID, 512, nullptr, infoLog);
+		std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+	}
+
+	// Delete shader after linking
+	glDeleteShader(cs);
+}
+
 Shader::Shader(const char* vsPath, const char* fsPath)
 {
 	std::string vsCode;
