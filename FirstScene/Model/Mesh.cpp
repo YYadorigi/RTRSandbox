@@ -134,7 +134,7 @@ void Mesh::draw(Shader& shader, std::vector<glm::vec3>& translations)
 	glEnableVertexAttribArray(3);
 	glVertexAttribDivisor(3, 1);
 
-	glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0, translations.size());
+	glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0, static_cast<unsigned int>(translations.size()));
 
 	glBindVertexArray(0);
 	for (unsigned int idx{}; const auto & texture : textures) {

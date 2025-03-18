@@ -103,6 +103,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
 {
 	std::vector<std::shared_ptr<TextureMap2D>> textures;
+	bool sRGB = (type == aiTextureType_AMBIENT || type == aiTextureType_DIFFUSE || type == aiTextureType_SPECULAR);
 
 	for (unsigned int i = 0; i < material->GetTextureCount(type); i++) {
 		aiString str;
@@ -123,7 +124,8 @@ std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMateria
 			TextureMap2D texture = TextureMap2D(
 				path.c_str(), name, typeName,
 				0, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, flipY
+				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
+				sRGB, flipY
 			);
 			std::shared_ptr<TextureMap2D> tex = std::make_shared<TextureMap2D>(std::move(texture));
 			loadedTextures.emplace_back(tex);

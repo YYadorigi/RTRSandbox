@@ -9,5 +9,8 @@ void main()
 {
 	vec4 fragColor = texture(screenTexture, texCoords);
     float average = 0.2126 * fragColor.r + 0.7152 * fragColor.g + 0.0722 * fragColor.b;
-    FragColor = vec4(average, average, average, 1.0);
+
+    fragColor = vec4(average, average, average, 1.0);
+	fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / 2.2));	// gamma correction
+	FragColor = fragColor;
 }

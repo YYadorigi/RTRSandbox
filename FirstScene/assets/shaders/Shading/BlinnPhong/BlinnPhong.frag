@@ -112,7 +112,7 @@ vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
 
     vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, lightDir), 0.0);
     vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
-    return (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
+    return (diffuse + specular) * pow(inversesqrt(1.0 + dist * dist), 2) * light.color * light.intensity;
 }
 
 vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -123,7 +123,7 @@ vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 
     vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, lightDir), 0.0);
     vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
-    vec3 original = (diffuse + specular) * pow(inversesqrt(1.0 + 0.09 * dist + 0.032 * (dist * dist)), 2) * light.color * light.intensity;
+    vec3 original = (diffuse + specular) * pow(inversesqrt(1.0 + dist * dist), 2) * light.color * light.intensity;
 
     float theta = dot(lightDir, normalize(-light.direction));
     float epsilon = light.cutoff - light.outerCutoff;

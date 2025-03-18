@@ -7,5 +7,7 @@ out vec4 FragColor;
 
 void main()
 {
-	FragColor = texture(screenTexture, texCoords);
+	vec4 fragColor = texture(screenTexture, texCoords);
+	fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / 2.2));	// gamma correction
+	FragColor = fragColor;
 }

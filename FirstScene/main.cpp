@@ -30,7 +30,7 @@ static Camera camera = Camera{
 	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 	frustum,
-	5.0f,	// speed
+	4.5f,	// speed
 	0.05f	// sensitivity
 };
 
@@ -41,24 +41,32 @@ Light pointLights[] = {
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		3.0f	// intensity
+		10.0f	// intensity
 	),
 	PointLight(
-		glm::vec3(-5.0f, 5.0f, 5.0f),	// position
+		glm::vec3(-5.0f, -5.0f, -5.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		3.0f	// intensity
+		10.0f	// intensity
 	),
 	PointLight(
-		glm::vec3(0.0f, -5.0f, -5.0f),	// position
+		glm::vec3(5.0f, 0.0f, -5.0f),	// position
 		glm::vec3(0.0f),				// target
 		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		3.0f	// intensity
-	)
+		10.0f	// intensity
+	),
+	PointLight(
+		glm::vec3(-5.0f, 0.0f, 5.0f),	// position
+		glm::vec3(0.0f),				// target
+		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+		frustum,
+		glm::vec3(1.0f, 1.0f, 1.0f),	// color
+		10.0f	// intensity
+	),
 };
 
 static SpotLight cameraLight = SpotLight{
@@ -67,14 +75,14 @@ static SpotLight cameraLight = SpotLight{
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
 	frustum,
 	glm::vec3(1.0f, 1.0f, 1.0f),	// color
-	1.0f,	// intensity
+	10.0f,	// intensity
 	glm::cos(glm::radians(12.5f)),	// cutoff
 	glm::cos(glm::radians(17.5f))	// outer cutoff
 }; static bool cameraLightActive = true;
 
 AmbientLight ambient = {
 	glm::vec3(1.0f),	// color
-	0.1f,	// intensity
+	0.0f,	// intensity
 };
 
 void processInput(GLFWwindow* window);
@@ -126,12 +134,12 @@ int main()
 	Skybox skybox("assets/environment/Skybox", 0);
 
 	// Load models
-	Model cube("assets/objects/Cube/Cube.obj");
 	Model backpack("assets/objects/Backpack/Backpack.obj", true);
 	Model vase("assets/objects/Vase/Vase.obj");
 	Model vase20("assets/objects/Vase0.2/Vase.obj");
 	Model vase35("assets/objects/Vase0.35/Vase.obj");
 	Model vase50("assets/objects/Vase0.5/Vase.obj");
+	Model nerfGun("assets/objects/NerfGun/scene.obj");
 
 	// Load shader programs
 	Shader skyboxShader = Shader(
@@ -221,6 +229,9 @@ int main()
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.0f, -1.0f));
 		sceneDraw(backpack, opaqueShader, model);
 
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 5.0f, 0.0f));
+		sceneDraw(nerfGun, opaqueShader, model);
+
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.5f));
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		sceneDraw(vase, opaqueShader, model);
@@ -307,8 +318,8 @@ int main()
 		// Post-processing pass
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
+		glClearBufferfv(GL_DEPTH, 0, glm::value_ptr(glm::vec4(1.0f)));
 
 		screenQuad.draw(screenShader, std::vector<ScreenQuadTexture>{
 			{"screenTexture", intermediateFBO, 0}
