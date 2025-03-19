@@ -28,6 +28,7 @@ public:
 	void blitColorTexture(unsigned int selfIndex, const Framebuffer& other, unsigned int otherIndex) const;
 	void blitRenderbuffer(const Framebuffer& other) const;
 	void bindColorTexture(unsigned int index, unsigned int targetIndex) const;
+	unsigned int getColorTextureID(unsigned int index) const;
 private:
 	unsigned int FBO;
 	unsigned int width, height;

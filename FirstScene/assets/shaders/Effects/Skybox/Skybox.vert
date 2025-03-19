@@ -12,6 +12,6 @@ out vec3 cubeCoords;
 void main()
 {
     cubeCoords = aPos;
-    vec4 position = projection * mat4(mat3(view)) * vec4(aPos, 1.0);    // Remove translation
+    vec4 position = projection * mat4(mat3(view)) * vec4(aPos, 1.0);    // remove translation
     gl_Position = position.xyww;
 }

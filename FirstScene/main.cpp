@@ -304,9 +304,6 @@ int main()
 		// Post-processing pass
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
-		glClearBufferfv(GL_DEPTH, 0, glm::value_ptr(glm::vec4(1.0f)));
-
 		screenQuad.draw(screenShader, std::vector<ScreenQuadTexture>{
 			{"screenTexture", intermediateFBO, 0}
 		});

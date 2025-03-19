@@ -206,3 +206,8 @@ void Framebuffer::bindColorTexture(unsigned int index, unsigned int targetIndex)
 {
 	colorAttachments[index]->bind(targetIndex);
 }
+
+unsigned int Framebuffer::getColorTextureID(unsigned int index) const
+{
+	return colorAttachments[index]->getID();
+}
