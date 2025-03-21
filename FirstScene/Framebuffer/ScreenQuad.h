@@ -11,7 +11,7 @@ struct ScreenQuadTexture
 {
 	std::string name;
 	Framebuffer& framebuffer;
-	unsigned int attachmentIndex;
+	int attachmentIndex;	// -1 refers to depth texture
 };
 
 class ScreenQuad

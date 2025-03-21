@@ -1,5 +1,5 @@
 #pragma once
-#include "Camera/ViewCone.h"
+#include "ViewCone.h"
 
 /*
 * This class represents a light source in 3D space.
@@ -24,8 +24,7 @@ protected:
 /*
 * This class represents a point light source in 3D space.
 *
-* Its shadow map is generated as a cube map, called the
-* omnidirectional shadow map.
+* Its shadow map is generated as a cube map, called the omnidirectional shadow map.
 *
 */
 class PointLight : public Light
@@ -45,9 +44,8 @@ protected:
 * This class represents a spot light source in 3D space.
 *
 * It has a cutoff angle and an outer cutoff angle for simulating light cones.
-* Note that we store the cutoff and outer cutoff angles with cosine values
-* to avoid calling trigonometric functions in the shader.Instead of a direction vector, we sometimes prefer to use a target coordinate
-* to describe its directionality.
+* Cutoff and outer cutoff angles are stored as cosine values to avoid trigonometry in shader.
+* Instead of a direction vector, we prefer to use a target to describe its directionality.
 *
 */
 class SpotLight : public Light

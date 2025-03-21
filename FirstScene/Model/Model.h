@@ -3,7 +3,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "Texture/Texture2D.h"
+#include "Texture/Texture.h"
 #include "Mesh.h"
 
 class Model

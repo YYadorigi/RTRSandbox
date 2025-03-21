@@ -3,9 +3,16 @@
 #include <stb_image.h>
 #include "CubeMap.h"
 
-CubeMap::CubeMap(std::array<std::string, 6> paths, unsigned int mipmapLevel, unsigned int wrapS, unsigned int wrapT,
-	unsigned int wrapR, unsigned int minFilter, unsigned int magFilter, bool flipY) :
-	Texture(GL_TEXTURE_CUBE_MAP)
+CubeMap::CubeMap(
+	std::array<std::string, 6> paths,
+	unsigned int mipmapLevel,
+	unsigned int wrapS,
+	unsigned int wrapT,
+	unsigned int wrapR,
+	unsigned int minFilter,
+	unsigned int magFilter,
+	bool flipY
+) : Texture(GL_TEXTURE_CUBE_MAP)
 {
 	int width, height, nrChannels;
 	for (unsigned int idx{}; const auto & path : paths) {

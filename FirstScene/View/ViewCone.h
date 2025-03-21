@@ -22,8 +22,8 @@ struct Frustum
 /**
  * This struct represents a view cone (frustum) in 3D space.
  *
- * It can serve as the core component of various forms of view, such as
- * cameras and lights. In the case of lights, it is used to generate shadow maps.
+ * It can serve as the core component of various forms of view, such as cameras and lights.
+ * In the case of lights, it is used to generate shadow maps.
  *
  */
 struct ViewCone

@@ -59,7 +59,7 @@ void ScreenQuad::draw(Shader& shader, const std::vector<ScreenQuadTexture>& text
 {
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {
-		texture.framebuffer.bindColorTexture(texture.attachmentIndex, idx);
+		texture.framebuffer.bindTexture(texture.attachmentIndex, idx);
 		shader.setInt(texture.name.c_str(), idx);
 		++idx;
 	}
@@ -79,7 +79,7 @@ void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture>&& textures)
 {
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {
-		texture.framebuffer.bindColorTexture(texture.attachmentIndex, idx);
+		texture.framebuffer.bindTexture(texture.attachmentIndex, idx);
 		shader.setInt(texture.name.c_str(), idx);
 		++idx;
 	}

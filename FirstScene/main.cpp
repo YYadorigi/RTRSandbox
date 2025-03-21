@@ -10,11 +10,10 @@
 #include "macro.h"
 #include "Shader/Shader.h"
 #include "Shader/UniformBuffer.h"
-#include "Camera/Camera.h"
-#include "Lights/Light.h"
+#include "View/Camera.h"
+#include "View/Light.h"
 #include "Model/Model.h"
 #include "Skybox/Skybox.h"
-#include "Framebuffer/Renderbuffer.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
 
@@ -102,23 +101,20 @@ int main()
 	}
 
 	// Create framebuffers
-	std::shared_ptr<Renderbuffer> depthRBO = std::make_shared<Renderbuffer>(
-		SCREEN_WIDTH, SCREEN_HEIGHT, RBOType::DEPTH, true
-	);
-
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
-	opaqueFBO.attachRenderbuffer(depthRBO);									// opaque depth texture
 
 	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
-	transparentFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);				// revealge texture
-	transparentFBO.attachRenderbuffer(depthRBO);							// opaque depth texture
+	transparentFBO.attachColorTexture(GL_R32F, GL_RED, GL_FLOAT);			// revealge texture
+
+	std::shared_ptr<RenderTexture2D> depthTexture = opaqueFBO.attachDepthTexture(DepthStencilType::DEPTH);
+	transparentFBO.attachDepthTexture(depthTexture);
 
 	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
 	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// opaque color texture
 	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
-	intermediateFBO.attachColorTexture(GL_R8, GL_RED, GL_FLOAT);			// revealge texture
+	intermediateFBO.attachColorTexture(GL_R32F, GL_RED, GL_FLOAT);			// revealge texture
 
 	// Create screen quad
 	ScreenQuad screenQuad;
