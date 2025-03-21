@@ -24,7 +24,11 @@ public:
 	void configureColorAttachments(const std::vector<unsigned int>& indices) const;
 	void configureColorAttachments(std::vector<unsigned int>&& indices) const;
 
-	inline void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, FBO); }
+	inline void bind() const
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		glViewport(0, 0, width, height);
+	}
 	void blitColorTexture(unsigned int selfIndex, const Framebuffer& other, unsigned int otherIndex) const;
 	void blitRenderbuffer(const Framebuffer& other) const;
 	void bindColorTexture(unsigned int index, unsigned int targetIndex) const;

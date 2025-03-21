@@ -10,8 +10,8 @@
 #include "macro.h"
 #include "Shader/Shader.h"
 #include "Shader/UniformBuffer.h"
-#include "Viewer/Camera.h"
-#include "Viewer/Light.h"
+#include "Camera/Camera.h"
+#include "Lights/Light.h"
 #include "Model/Model.h"
 #include "Skybox/Skybox.h"
 #include "Framebuffer/Renderbuffer.h"
@@ -23,67 +23,60 @@ static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
-Frustum frustum(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
-
-static Camera camera = Camera{
+ViewCone cameraViewCone(
 	glm::vec3(0.0f, 0.0f, 5.0f),	// position
 	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
 	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-	frustum,
+	Frustum(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f)
+);
+
+Camera camera(
+	cameraViewCone,
 	4.5f,	// speed
 	0.05f	// sensitivity
-};
+);
 
-Light pointLights[] = {
+Frustum pointLightFrustum(90.0f, static_cast<float>(SHADOW_WIDTH) / SHADOW_HEIGHT, 0.1f, 100.0f);
+
+PointLight pointLights[] = {
 	PointLight(
 		glm::vec3(5.0f, 5.0f, 5.0f),	// position
-		glm::vec3(0.0f),				// target
-		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f	// intensity
+		10.0f,							// intensity
+		pointLightFrustum
 	),
 	PointLight(
 		glm::vec3(-5.0f, -5.0f, -5.0f),	// position
-		glm::vec3(0.0f),				// target
-		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f	// intensity
+		10.0f,							// intensity
+		pointLightFrustum
 	),
 	PointLight(
 		glm::vec3(5.0f, 0.0f, -5.0f),	// position
-		glm::vec3(0.0f),				// target
-		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f	// intensity
+		10.0f,							// intensity
+		pointLightFrustum
 	),
 	PointLight(
 		glm::vec3(-5.0f, 0.0f, 5.0f),	// position
-		glm::vec3(0.0f),				// target
-		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-		frustum,
 		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f	// intensity
+		10.0f,							// intensity
+		pointLightFrustum
+	)
+};
+
+SpotLight cameraLight(
+	ViewCone(
+		glm::vec3(0.0f, 0.0f, 5.0f),	// position
+		glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
+		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
+		Frustum(45.0f, static_cast<float>(SHADOW_WIDTH) / SHADOW_HEIGHT, 0.1f, 100.0f)
 	),
-};
-
-static SpotLight cameraLight = SpotLight{
-	glm::vec3(0.0f, 0.0f, 5.0f),	// position
-	glm::vec3(0.0f),				// target
-	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-	frustum,
-	glm::vec3(1.0f, 1.0f, 1.0f),	// color
-	10.0f,	// intensity
-	glm::cos(glm::radians(12.5f)),	// cutoff
-	glm::cos(glm::radians(17.5f))	// outer cutoff
-}; static bool cameraLightActive = true;
-
-AmbientLight ambient = {
-	glm::vec3(1.0f),	// color
-	0.0f,	// intensity
-};
+	glm::vec3(1.0f, 1.0f, 1.0f),		// color
+	10.0f,								// intensity
+	glm::cos(glm::radians(12.5f)),		// cutoff
+	glm::cos(glm::radians(17.5f))		// outer cutoff
+); static bool cameraLightActive = true;
 
 void processInput(GLFWwindow* window);
 
@@ -179,11 +172,13 @@ int main()
 
 		// Update uniform variables
 		viewProjUBO.bind(0);
+
 		uniformOffset(0, true);
 		viewProjUBO.setData(glm::value_ptr(camera.getViewMatrix()), sizeof(glm::mat4), uniformOffset(sizeof(glm::mat4)));
 		viewProjUBO.setData(glm::value_ptr(camera.getProjectionMatrix()), sizeof(glm::mat4), uniformOffset(sizeof(glm::mat4)));
 
 		lightsUBO.bind(1);
+
 		uniformOffset(2 * sizeof(glm::vec4), true);
 		for (unsigned int idx{}; const auto & pointLight : pointLights) {
 			lightsUBO.setData(glm::value_ptr(pointLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
@@ -191,6 +186,7 @@ int main()
 			lightsUBO.setData(&static_cast<const float&>(pointLight.getIntensity()), sizeof(float), uniformOffset(sizeof(float)));
 			if (++idx >= MAX_POINT_LIGHTS) break;
 		}
+
 		uniformOffset((2 + 2 * MAX_POINT_LIGHTS) * sizeof(glm::vec4), true);
 		lightsUBO.setData(glm::value_ptr(cameraLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
 		lightsUBO.setData(glm::value_ptr(cameraLight.getDirection()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
@@ -198,8 +194,6 @@ int main()
 		lightsUBO.setData(&static_cast<const float&>(cameraLight.getIntensity() * cameraLightActive), sizeof(float), uniformOffset(sizeof(float)));
 		lightsUBO.setData(&static_cast<const float&>(cameraLight.getCutoff()), sizeof(float), uniformOffset(sizeof(float)));
 		lightsUBO.setData(&static_cast<const float&>(cameraLight.getOuterCutoff()), sizeof(float), uniformOffset(sizeof(glm::vec4) - sizeof(float)));
-		lightsUBO.setData(glm::value_ptr(ambient.color), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
-		lightsUBO.setData(&static_cast<const float&>(ambient.intensity), sizeof(float), uniformOffset(sizeof(float)));
 
 		// Opauqe render pass
 		opaqueFBO.bind();
