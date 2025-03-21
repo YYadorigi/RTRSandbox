@@ -62,22 +62,20 @@ std::shared_ptr<RenderTexture2D> Framebuffer::attachColorTexture(unsigned int in
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	std::shared_ptr<RenderTexture2D> texture;
-	if (msaa) {
-		texture = std::make_shared<RenderTexture2D>(
-			width, height, internalFormat,
-			GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-			GL_LINEAR, GL_LINEAR
-		);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, texture->getID(), 0);
-	} else {
-		texture = std::make_shared<RenderTexture2D>(
-			width, height, internalFormat, format, dataType,
-			GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-			GL_LINEAR, GL_LINEAR
-		);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->getID(), 0);
-	}
+	std::shared_ptr<RenderTexture2D> texture = std::make_shared<RenderTexture2D>(
+		width,
+		height,
+		internalFormat,
+		format,
+		dataType,
+		GL_CLAMP_TO_EDGE,
+		GL_CLAMP_TO_EDGE,
+		GL_LINEAR,
+		GL_LINEAR,
+		msaa
+	);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, texture->getTarget(), texture->getID(), 0);
 
 	colorAttachments.emplace_back(texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -100,11 +98,9 @@ void Framebuffer::attachColorTexture(const std::shared_ptr<RenderTexture2D> text
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	if (msaa) {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, texture->getID(), 0);
-	} else {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, texture->getID(), 0);
-	}
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, texture->getTarget(), texture->getID(), 0);
+
 	colorAttachments.emplace_back(texture);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -150,22 +146,20 @@ std::shared_ptr<RenderTexture2D> Framebuffer::attachDepthTexture(DepthStencilTyp
 		default: break;
 	}
 
-	std::shared_ptr<RenderTexture2D> texture;
-	if (msaa) {
-		texture = std::make_shared<RenderTexture2D>(
-			width, height, internalFormat,
-			GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-			GL_LINEAR, GL_LINEAR
-		);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, texture->getID(), 0);
-	} else {
-		texture = std::make_shared<RenderTexture2D>(
-			width, height, internalFormat, format, dataType,
-			GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-			GL_LINEAR, GL_LINEAR
-		);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->getID(), 0);
-	}
+	std::shared_ptr<RenderTexture2D> texture = std::make_shared<RenderTexture2D>(
+		width,
+		height,
+		internalFormat,
+		format,
+		dataType,
+		GL_CLAMP_TO_EDGE,
+		GL_CLAMP_TO_EDGE,
+		GL_LINEAR,
+		GL_LINEAR,
+		msaa
+	);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, texture->getTarget(), texture->getID(), 0);
 
 	depthStencilAttachment = texture;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -201,13 +195,9 @@ void Framebuffer::attachDepthTexture(const std::shared_ptr<RenderTexture2D> text
 			break;
 	}
 
-	if (msaa) {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D_MULTISAMPLE, texture->getID(), 0);
-	} else {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->getID(), 0);
-	}
-	depthStencilAttachment = texture;
+	glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, texture->getTarget(), texture->getID(), 0);
 
+	depthStencilAttachment = texture;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

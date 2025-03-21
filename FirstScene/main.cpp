@@ -7,13 +7,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "macro.h"
+#include "scene.h"
 #include "Shader/Shader.h"
 #include "Shader/UniformBuffer.h"
-#include "View/Camera.h"
-#include "View/Light.h"
 #include "Model/Model.h"
-#include "Skybox/Skybox.h"
+#include "Texture/Skybox.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
 
@@ -22,66 +20,11 @@ static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
-ViewCone cameraViewCone(
-	glm::vec3(0.0f, 0.0f, 5.0f),	// position
-	glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
-	glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-	Frustum(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f)
-);
-
-Camera camera(
-	cameraViewCone,
-	4.5f,	// speed
-	0.05f	// sensitivity
-);
-
-Frustum pointLightFrustum(90.0f, static_cast<float>(SHADOW_WIDTH) / SHADOW_HEIGHT, 0.1f, 100.0f);
-
-PointLight pointLights[] = {
-	PointLight(
-		glm::vec3(5.0f, 5.0f, 5.0f),	// position
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f,							// intensity
-		pointLightFrustum
-	),
-	PointLight(
-		glm::vec3(-5.0f, -5.0f, -5.0f),	// position
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f,							// intensity
-		pointLightFrustum
-	),
-	PointLight(
-		glm::vec3(5.0f, 0.0f, -5.0f),	// position
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f,							// intensity
-		pointLightFrustum
-	),
-	PointLight(
-		glm::vec3(-5.0f, 0.0f, 5.0f),	// position
-		glm::vec3(1.0f, 1.0f, 1.0f),	// color
-		10.0f,							// intensity
-		pointLightFrustum
-	)
-};
-
-SpotLight cameraLight(
-	ViewCone(
-		glm::vec3(0.0f, 0.0f, 5.0f),	// position
-		glm::vec3(0.0f, 0.0f, -1.0f),	// look-at direction
-		glm::vec3(0.0f, 1.0f, 0.0f),	// up direction
-		Frustum(45.0f, static_cast<float>(SHADOW_WIDTH) / SHADOW_HEIGHT, 0.1f, 100.0f)
-	),
-	glm::vec3(1.0f, 1.0f, 1.0f),		// color
-	10.0f,								// intensity
-	glm::cos(glm::radians(12.5f)),		// cutoff
-	glm::cos(glm::radians(17.5f))		// outer cutoff
-); static bool cameraLightActive = true;
-
 void processInput(GLFWwindow* window);
 
-static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile);
+int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile);
 
-static GLFWwindow* createWindow(unsigned int width, unsigned int height, const char* title);
+GLFWwindow* createWindow(unsigned int width, unsigned int height, const char* title);
 
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 
@@ -126,18 +69,23 @@ int main()
 	Model vase("assets/objects/Vase/Vase.obj");
 	Model translucentVase("assets/objects/Vase0.5/Vase.obj");
 	Model backpack("assets/objects/Backpack/Backpack.obj", true);
+	Model bathroomFloor("assets/objects/BathroomFloor/bathroom_floor.obj");
 
 	// Load shader programs
+	Shader shadowShader = Shader(
+		"assets/shaders/Effects/ShadowMap/ShadowInstanced.vert",
+		"assets/shaders/Effects/ShadowMap/Shadow.frag"
+	);
 	Shader skyboxShader = Shader(
 		"assets/shaders/Effects/Skybox/Skybox.vert",
 		"assets/shaders/Effects/Skybox/Skybox.frag"
 	);
 	Shader opaqueShader = Shader(
-		"assets/shaders/Shading/BlinnPhong/BlinnPhong.vert",
+		"assets/shaders/Shading/BlinnPhong/BlinnPhongInstanced.vert",
 		"assets/shaders/Shading/BlinnPhong/BlinnPhong.frag"
 	);
 	Shader transparentShader = Shader(
-		"assets/shaders/Shading/BlinnPhong/BlinnPhong.vert",
+		"assets/shaders/Shading/BlinnPhong/BlinnPhongInstanced.vert",
 		"assets/shaders/Shading/BlinnPhong/BlinnPhongTransparency.frag"
 	);
 	Shader blendShader = Shader(
@@ -166,7 +114,7 @@ int main()
 		// Device input
 		processInput(window);
 
-		// Update uniform variables
+		// Global uniform variables
 		viewProjUBO.bind(0);
 
 		uniformOffset(0, true);
@@ -175,7 +123,7 @@ int main()
 
 		lightsUBO.bind(1);
 
-		uniformOffset(2 * sizeof(glm::vec4), true);
+		uniformOffset(0, true);
 		for (unsigned int idx{}; const auto & pointLight : pointLights) {
 			lightsUBO.setData(glm::value_ptr(pointLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
 			lightsUBO.setData(glm::value_ptr(pointLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
@@ -183,13 +131,16 @@ int main()
 			if (++idx >= MAX_POINT_LIGHTS) break;
 		}
 
-		uniformOffset((2 + 2 * MAX_POINT_LIGHTS) * sizeof(glm::vec4), true);
+		uniformOffset(MAX_POINT_LIGHTS * 2 * sizeof(glm::vec4), true);
 		lightsUBO.setData(glm::value_ptr(cameraLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
 		lightsUBO.setData(glm::value_ptr(cameraLight.getDirection()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
 		lightsUBO.setData(glm::value_ptr(cameraLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
 		lightsUBO.setData(&static_cast<const float&>(cameraLight.getIntensity() * cameraLightActive), sizeof(float), uniformOffset(sizeof(float)));
 		lightsUBO.setData(&static_cast<const float&>(cameraLight.getCutoff()), sizeof(float), uniformOffset(sizeof(float)));
 		lightsUBO.setData(&static_cast<const float&>(cameraLight.getOuterCutoff()), sizeof(float), uniformOffset(sizeof(glm::vec4) - sizeof(float)));
+
+		glm::mat4 model{};
+		std::vector<glm::vec3> translations{};
 
 		// Opauqe render pass
 		opaqueFBO.bind();
@@ -199,7 +150,7 @@ int main()
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)));
-		glClearBufferfv(GL_DEPTH, 0, glm::value_ptr(glm::vec4(1.0f)));
+		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		// Render drawcalls
 		opaqueShader.use();
@@ -207,20 +158,22 @@ int main()
 		opaqueShader.setUniformBlock("Lights", 1);
 		opaqueShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
-		skyboxShader.use();
-		skyboxShader.setUniformBlock("VPMatrices", 0);
-
-		glm::mat4 model = glm::mat4(1.0f);
-
-		std::vector<glm::vec3> translations = {
+		model = glm::mat4(1.0f);
+		translations = {
 			glm::vec3(-5.0f, 0.0f, -1.0f),
 			glm::vec3(0.0f, 0.0f, -1.0f),
 			glm::vec3(5.0f, 0.0f, -1.0f),
 		};
-
 		sceneDraw(backpack, opaqueShader, model, translations);
 
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -5.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.01f));
+		sceneDraw(bathroomFloor, opaqueShader, model);
+
 		// Skybox drawcall
+		skyboxShader.use();
+		skyboxShader.setUniformBlock("VPMatrices", 0);
+
 		glDepthFunc(GL_LEQUAL);
 		skybox.draw(skyboxShader);
 		glDepthFunc(GL_LESS);

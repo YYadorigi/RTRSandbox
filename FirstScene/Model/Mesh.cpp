@@ -1,8 +1,11 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<std::shared_ptr<TextureMap2D>> textures,
-	float shininess, float opacity) :
-	vertices(vertices), indices(indices), textures(textures), shininess(shininess), opacity(opacity)
+Mesh::Mesh(std::vector<Vertex> vertices,
+	std::vector<unsigned int> indices,
+	std::vector<std::shared_ptr<TextureMap2D>> textures,
+	float shininess,
+	float opacity
+) : vertices(vertices), indices(indices), textures(textures), shininess(shininess), opacity(opacity)
 {
 	setupMesh();
 }

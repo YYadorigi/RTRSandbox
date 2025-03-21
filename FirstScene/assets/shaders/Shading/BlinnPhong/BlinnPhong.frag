@@ -59,10 +59,10 @@ uniform vec3 viewPos;
 uniform Material material;
 layout (std140) uniform Lights
 {
-    DirLight dirLight;
     PointLight pointLights[MAX_POINT_LIGHTS];
     SpotLight spotLight;
     AmbientLight ambientLight;
+    DirLight dirLight;
 };
 
 out vec4 FragColor;

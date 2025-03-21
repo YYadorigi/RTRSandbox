@@ -47,9 +47,7 @@ project "FirstScene"
 		"%{prj.name}/Model/**.cpp",
 		"%{prj.name}/Framebuffer/**.h",
 		"%{prj.name}/Framebuffer/**.cpp",
-		"%{prj.name}/Skybox/**.h",
-		"%{prj.name}/Skybox/**.cpp",
-		"%{prj.name}/macro.h",
+		"%{prj.name}/scene.h",
 		"%{prj.name}/main.cpp",
 	}
 

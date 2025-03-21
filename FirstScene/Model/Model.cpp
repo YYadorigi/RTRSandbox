@@ -122,10 +122,16 @@ std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMateria
 		if (!skip) {
 			std::string path = directory + '/' + name;
 			TextureMap2D texture = TextureMap2D(
-				path.c_str(), name, typeName,
-				0, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
-				GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,
-				sRGB, flipY
+				path.c_str(),
+				name,
+				typeName,
+				0,
+				GL_CLAMP_TO_EDGE,
+				GL_CLAMP_TO_EDGE,
+				GL_LINEAR_MIPMAP_LINEAR,
+				GL_LINEAR,
+				sRGB,
+				flipY
 			);
 			std::shared_ptr<TextureMap2D> tex = std::make_shared<TextureMap2D>(std::move(texture));
 			loadedTextures.emplace_back(tex);
