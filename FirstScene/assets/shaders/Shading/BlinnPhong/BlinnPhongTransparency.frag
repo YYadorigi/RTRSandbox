@@ -52,6 +52,7 @@ layout (std140) uniform Lights
 };
 uniform sampler2D spotShadowMaps[MAX_LIGHTS_PER_TYPE];
 uniform vec3 cameraPosition;
+uniform float offset = 1.0 / 300.0;
 
 out vec4 FragColor;
 
@@ -76,7 +77,7 @@ void main()
     for(int i = 0; i < MAX_LIGHTS_PER_TYPE; i++)
     {
         vec3 lightDir = normalize(spotLights[i].position - fragPos);
-        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.0001);
+        float bias = max(0.001 * (1.0 - dot(normal, lightDir)), 0.0001);
         float shadowed = calculateSpotShadow(spotLights[i], spotShadowMaps[i], fragPos, bias);
         result += (1.0 - shadowed) * shadingSpotLight(spotLights[i], normal, fragPos, viewDir);
     }
@@ -120,14 +121,33 @@ vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 
 float calculateSpotShadow(SpotLight light, sampler2D shadowMap, vec3 fragPos, float bias)
 {
+    vec2 offsets[9] = vec2[](
+        vec2(-offset, offset),      // top-left
+        vec2(0.0f, offset),         // top-center
+        vec2(offset, offset),       // top-right
+        vec2(-offset, 0.0f),        // center-left
+        vec2(0.0f, 0.0f),           // center-center
+        vec2(offset, 0.0f),         // center-right
+        vec2(-offset, -offset),     // bottom-left
+        vec2(0.0f, -offset),        // bottom-center
+        vec2(offset, -offset)       // bottom-right   
+    );
+
     vec4 fragPosLightSpace = light.lightProj * light.lightView * vec4(fragPos, 1.0);
     vec3 NDCLightSpace = fragPosLightSpace.xyz / fragPosLightSpace.w;
     vec3 shadowMapCoords = NDCLightSpace * 0.5 + 0.5;
 
-    float closestDepth = texture(shadowMap, shadowMapCoords.xy).r;
-    float currentDepth = shadowMapCoords.z;
+    if (shadowMapCoords.z > 1.0) {
+        return 0.0;
+    }
 
-    float shadowed = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    float shadowed = 0.0;
+    for (int i = 0; i < 9; i++)
+    {
+        float closestDepth = texture(shadowMap, shadowMapCoords.xy + offsets[i]).r;
+        float currentDepth = shadowMapCoords.z;
+        shadowed += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    }
 
-    return shadowed;
+    return shadowed / 9.0;
 }
