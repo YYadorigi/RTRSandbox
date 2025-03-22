@@ -47,8 +47,10 @@ project "FirstScene"
 		"%{prj.name}/Model/**.cpp",
 		"%{prj.name}/Framebuffer/**.h",
 		"%{prj.name}/Framebuffer/**.cpp",
-		"%{prj.name}/scene.h",
-		"%{prj.name}/main.cpp",
+		"%{prj.name}/utils/**.h",
+		"%{prj.name}/utils/**.cpp",
+		"%{prj.name}/**.h",
+		"%{prj.name}/**.cpp",
 	}
 
 	includedirs {

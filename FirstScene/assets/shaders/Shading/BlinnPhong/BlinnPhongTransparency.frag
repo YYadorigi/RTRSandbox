@@ -1,12 +1,12 @@
 #version 430 core
 layout(early_fragment_tests) in;
-
-#define MAX_POINT_LIGHTS 4
+#define MAX_LIGHTS_PER_TYPE 4
 
 struct Material
 {
     sampler2D ambient1;
     sampler2D ambient2;
+    sampler2D ambient3;
     sampler2D diffuse1;
     sampler2D diffuse2;
     sampler2D diffuse3;
@@ -17,21 +17,13 @@ struct Material
     float opacity;
 };
 
-struct DirLight 
-{
-    vec3 direction;
-	
-    vec3 color;
-    float intensity;
-};  // 48 bytes under std140
-
 struct PointLight 
 {
     vec3 position;
 	
     vec3 color;
     float intensity;
-};  // 48 bytes under std140
+};  // 32 bytes under std140
 
 struct SpotLight 
 {
@@ -42,55 +34,52 @@ struct SpotLight
     float intensity;
 
     float cutoff;
-    float outerCutoff;    
-};  // 64 bytes under std140
-
-struct AmbientLight 
-{
-    vec3 color;
-    float intensity;
-};  // 32 bytes under std140
+    float outerCutoff;  
+    
+    mat4 lightView;
+    mat4 lightProj;
+};  // 192 bytes under std140
 
 centroid in vec3 fragPos;
 centroid in vec3 normal;
 centroid in vec2 texCoords;
 
-uniform vec3 viewPos;
 uniform Material material;
 layout (std140) uniform Lights
 {
-    PointLight pointLights[MAX_POINT_LIGHTS];
-    SpotLight spotLight;
-    AmbientLight ambientLight;
-    DirLight dirLight;
+    PointLight pointLights[MAX_LIGHTS_PER_TYPE];
+    SpotLight spotLights[MAX_LIGHTS_PER_TYPE];
 };
+uniform sampler2D spotShadowMaps[MAX_LIGHTS_PER_TYPE];
+uniform vec3 cameraPosition;
+
+out vec4 FragColor;
 
 layout (location = 0) out vec4 accumulation;
 layout (location = 1) out float revealage;
 
-// Function prototypes
-vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+float calculateSpotShadow(SpotLight light, sampler2D shadowMap, vec3 fragPos, float bias);
 
 void main()
 {
-    vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 viewDir = normalize(cameraPosition - fragPos);
     
     vec3 result = vec3(0.0);
-
-    result += shadingDirLight(dirLight, normal, viewDir);
     
-    for(int i = 0; i < MAX_POINT_LIGHTS; i++)
+    for(int i = 0; i < MAX_LIGHTS_PER_TYPE; i++)
     {
-        result += shadingPointLight(pointLights[i], normal, fragPos, viewDir);  
+        result += shadingPointLight(pointLights[i], normal, fragPos, viewDir);
     }
-    
-    result += shadingSpotLight(spotLight, normal, fragPos, viewDir);  
-    
-    result += texture(material.ambient1, texCoords).rgb * ambientLight.intensity * ambientLight.color;
 
-    result = clamp(result, 0.0, 1.0);
+    for(int i = 0; i < MAX_LIGHTS_PER_TYPE; i++)
+    {
+        vec3 lightDir = normalize(spotLights[i].position - fragPos);
+        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.0001);
+        float shadowed = calculateSpotShadow(spotLights[i], spotShadowMaps[i], fragPos, bias);
+        result += (1.0 - shadowed) * shadingSpotLight(spotLights[i], normal, fragPos, viewDir);
+    }
     
     vec4 color = vec4(result, material.opacity);
 
@@ -99,16 +88,6 @@ void main()
     accumulation = vec4(color.rgb * color.a, color.a) * weight;
 
     revealage = color.a;
-}
-
-// Function definitions
-vec3 shadingDirLight(DirLight light, vec3 normal, vec3 viewDir)
-{
-    vec3 halfDir = normalize(light.direction + viewDir);
-
-    vec3 diffuse = texture(material.diffuse1, texCoords).rgb * max(dot(normal, light.direction), 0.0);
-    vec3 specular = texture(material.specular1, texCoords).rgb * pow(max(dot(normal, halfDir), 0.0), material.shininess);
-    return (diffuse + specular) * light.color * light.intensity;
 }
 
 vec3 shadingPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -137,4 +116,18 @@ vec3 shadingSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
     return original * intensity;
+}
+
+float calculateSpotShadow(SpotLight light, sampler2D shadowMap, vec3 fragPos, float bias)
+{
+    vec4 fragPosLightSpace = light.lightProj * light.lightView * vec4(fragPos, 1.0);
+    vec3 NDCLightSpace = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    vec3 shadowMapCoords = NDCLightSpace * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowMap, shadowMapCoords.xy).r;
+    float currentDepth = shadowMapCoords.z;
+
+    float shadowed = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadowed;
 }

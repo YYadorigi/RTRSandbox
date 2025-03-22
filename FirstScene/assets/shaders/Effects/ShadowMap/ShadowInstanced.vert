@@ -8,11 +8,11 @@ uniform mat4 model;
 uniform mat4 invModel;
 layout (std140) uniform VPMatrices 
 {
-    mat4 view;
-    mat4 projection;
+    mat4 lightView;
+    mat4 lightProj;
 };
 
 void main()
 {
-    gl_Position = projection * view * (model * vec4(aPos, 1.0) + vec4(aInstancePos, 0.0));
+    gl_Position = lightProj * lightView * (model * vec4(aPos, 1.0) + vec4(aInstancePos, 0.0));
 }

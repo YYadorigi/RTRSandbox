@@ -7,10 +7,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "scene.h"
-#include "Shader/Shader.h"
-#include "Shader/UniformBuffer.h"
-#include "Model/Model.h"
+#include "macro.h"
+#include "utils/utils.h"
 #include "Texture/Skybox.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
@@ -20,17 +18,11 @@ static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
 
-void processInput(GLFWwindow* window);
-
 int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile);
 
 GLFWwindow* createWindow(unsigned int width, unsigned int height, const char* title);
 
-void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
-
-void sceneDraw(Model& model, Shader& shader, glm::mat4 transform, std::vector<glm::vec3>& translations);
-
-unsigned int uniformOffset(unsigned int increase, bool reset = false);
+void processInput(GLFWwindow* window);
 
 int main()
 {
@@ -43,33 +35,34 @@ int main()
 		return -1;
 	}
 
-	// Create framebuffers
+	// Create alpha blending buffers
 	Framebuffer opaqueFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	opaqueFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);		// opaque color texture
 
 	Framebuffer transparentFBO(SCREEN_WIDTH, SCREEN_HEIGHT, true);
 	transparentFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	transparentFBO.attachColorTexture(GL_R32F, GL_RED, GL_FLOAT);			// revealge texture
-
-	std::shared_ptr<RenderTexture2D> depthTexture = opaqueFBO.attachDepthTexture(DepthStencilType::DEPTH);
-	transparentFBO.attachDepthTexture(depthTexture);
+	transparentFBO.attachDepthTexture(opaqueFBO.attachDepthTexture(DepthStencilType::DEPTH));
 
 	Framebuffer intermediateFBO(SCREEN_WIDTH, SCREEN_HEIGHT);
 	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// opaque color texture
 	intermediateFBO.attachColorTexture(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT);	// accumulation texture
 	intermediateFBO.attachColorTexture(GL_R32F, GL_RED, GL_FLOAT);			// revealge texture
 
+	// Create shadow map buffers
+	std::array<Framebuffer, MAX_LIGHTS_PER_TYPE> spotShadowFBOs = {
+		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT),
+		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT),
+		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT),
+		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT)
+	};
+
+	for (auto& spotShadowFBO : spotShadowFBOs) {
+		spotShadowFBO.attachDepthTexture(DepthStencilType::DEPTH);
+	}
+
 	// Create screen quad
 	ScreenQuad screenQuad;
-
-	// Load skybox
-	Skybox skybox("assets/environment/Skybox", 0);
-
-	// Load models
-	Model vase("assets/objects/Vase/Vase.obj");
-	Model translucentVase("assets/objects/Vase0.5/Vase.obj");
-	Model backpack("assets/objects/Backpack/Backpack.obj", true);
-	Model bathroomFloor("assets/objects/BathroomFloor/bathroom_floor.obj");
 
 	// Load shader programs
 	Shader shadowShader = Shader(
@@ -99,7 +92,14 @@ int main()
 
 	// Create uniform block layouts
 	UniformBuffer viewProjUBO = UniformBuffer(2 * sizeof(glm::mat4));
-	UniformBuffer lightsUBO = UniformBuffer((7 + 2 * MAX_POINT_LIGHTS) * sizeof(glm::vec4));
+	UniformBuffer lightsUBO = UniformBuffer(MAX_LIGHTS_PER_TYPE * (POINT_LIGHT_BYTES + SPOT_LIGHT_BYTES));
+
+	// Load skybox and models
+	Skybox skybox("assets/environment/Skybox", 0, true);
+	Model vase("assets/models/Vase/Vase.obj");
+	Model translucentVase("assets/models/Vase0.5/Vase.obj");
+	Model backpack("assets/models/Backpack/Backpack.obj", true);
+	Model bathroomFloor("assets/models/BathroomFloor/bathroom_floor.obj");
 
 	// Render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -114,35 +114,69 @@ int main()
 		// Device input
 		processInput(window);
 
-		// Global uniform variables
-		viewProjUBO.bind(0);
-
-		uniformOffset(0, true);
-		viewProjUBO.setData(glm::value_ptr(camera.getViewMatrix()), sizeof(glm::mat4), uniformOffset(sizeof(glm::mat4)));
-		viewProjUBO.setData(glm::value_ptr(camera.getProjectionMatrix()), sizeof(glm::mat4), uniformOffset(sizeof(glm::mat4)));
+		// Light uniforms
+		unsigned int pointLightCount = 0;
+		unsigned int spotLightCount = 0;
 
 		lightsUBO.bind(1);
 
 		uniformOffset(0, true);
-		for (unsigned int idx{}; const auto & pointLight : pointLights) {
-			lightsUBO.setData(glm::value_ptr(pointLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
-			lightsUBO.setData(glm::value_ptr(pointLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
-			lightsUBO.setData(&static_cast<const float&>(pointLight.getIntensity()), sizeof(float), uniformOffset(sizeof(float)));
-			if (++idx >= MAX_POINT_LIGHTS) break;
+		for (const auto& pointLight : pointLights) {
+			loadPointLightUniforms(lightsUBO, pointLight);
+			if (++pointLightCount >= MAX_LIGHTS_PER_TYPE) break;
 		}
 
-		uniformOffset(MAX_POINT_LIGHTS * 2 * sizeof(glm::vec4), true);
-		lightsUBO.setData(glm::value_ptr(cameraLight.getPosition()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
-		lightsUBO.setData(glm::value_ptr(cameraLight.getDirection()), sizeof(glm::vec4), uniformOffset(sizeof(glm::vec4)));
-		lightsUBO.setData(glm::value_ptr(cameraLight.getColor()), sizeof(glm::vec3), uniformOffset(sizeof(glm::vec3)));
-		lightsUBO.setData(&static_cast<const float&>(cameraLight.getIntensity() * cameraLightActive), sizeof(float), uniformOffset(sizeof(float)));
-		lightsUBO.setData(&static_cast<const float&>(cameraLight.getCutoff()), sizeof(float), uniformOffset(sizeof(float)));
-		lightsUBO.setData(&static_cast<const float&>(cameraLight.getOuterCutoff()), sizeof(float), uniformOffset(sizeof(glm::vec4) - sizeof(float)));
+		uniformOffset(MAX_LIGHTS_PER_TYPE * POINT_LIGHT_BYTES, true);
+		for (const auto& spotLight : spotLights) {
+			loadSpotLightUniforms(lightsUBO, spotLight, spotLightCount == 0 ? cameraLightActive : true);
+			if (++spotLightCount >= MAX_LIGHTS_PER_TYPE) break;
+		}
 
 		glm::mat4 model{};
 		std::vector<glm::vec3> translations{};
 
-		// Opauqe render pass
+		// Shadow mapping render pass
+		for (unsigned int i = 0; i < spotLightCount; ++i) {
+			Framebuffer& spotShadowFBO = spotShadowFBOs[i];
+			SpotLight& spotLight = spotLights[i];
+
+			viewProjUBO.bind(0);
+			uniformOffset(0, true);
+			loadViewProjUniforms(viewProjUBO, spotLight);
+
+			spotShadowFBO.bind();
+
+			// Pre-render settings
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			// Render drawcalls
+			shadowShader.use();
+			shadowShader.setUniformBlock("VPMatrices", 0);
+
+			model = glm::mat4(1.0f);
+			translations = {
+				glm::vec3(-5.0f, 0.0f, -1.0f),
+				glm::vec3(0.0f, 0.0f, -1.0f),
+				glm::vec3(5.0f, 0.0f, -1.0f),
+			};
+			sceneDraw(backpack, shadowShader, model, translations);
+
+			model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -5.0f, 0.0f));
+			model = glm::scale(model, glm::vec3(0.01f));
+			sceneDraw(bathroomFloor, shadowShader, model);
+
+			// Post-render settings
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+		}
+
+		viewProjUBO.bind(0);
+		uniformOffset(0, true);
+		loadViewProjUniforms(viewProjUBO, camera);
+
+		// Opaque render pass
 		opaqueFBO.bind();
 		opaqueFBO.configureColorAttachments(std::vector<unsigned int>{0});
 
@@ -156,6 +190,10 @@ int main()
 		opaqueShader.use();
 		opaqueShader.setUniformBlock("VPMatrices", 0);
 		opaqueShader.setUniformBlock("Lights", 1);
+		for (unsigned int i = 0; i < spotLightCount; ++i) {
+			spotShadowFBOs[i].bindTexture(-1, 10 + i);
+			opaqueShader.setInt("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
+		}
 		opaqueShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
 		model = glm::mat4(1.0f);
@@ -199,6 +237,10 @@ int main()
 		transparentShader.use();
 		transparentShader.setUniformBlock("VPMatrices", 0);
 		transparentShader.setUniformBlock("Lights", 1);
+		for (unsigned int i = 0; i < spotLightCount; ++i) {
+			spotShadowFBOs[i].bindTexture(-1, 10 + i);
+			opaqueShader.setInt("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
+		}
 		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
 
 		model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -265,27 +307,11 @@ int main()
 	return 0;
 }
 
-void processInput(GLFWwindow* window)
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.updatePosition(camera.getDirection(), deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.updatePosition(-camera.getDirection(), deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.updatePosition(-camera.getRight(), deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.updatePosition(camera.getRight(), deltaTime);
-	cameraLight.updatePosition(camera.getPosition());
-}
-
 static int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile)
 {
 	int init = glfwInit();
 	if (!init) {
-		std::cout << "Failed to initialize GLFW" << std::endl;
+		std::cerr << "Failed to initialize GLFW" << std::endl;
 		return -1;
 	}
 
@@ -312,7 +338,7 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 	// Create a windowed mode window and its OpenGL context
 	GLFWwindow* window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (!window) {
-		std::cout << "Failed to create GLFW window" << std::endl;
+		std::cerr << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return nullptr;
 	}
@@ -320,7 +346,7 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 
 	// Load OpenGL functions using GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		std::cout << "Failed to initialize GLAD" << std::endl;
+		std::cerr << "Failed to initialize GLAD" << std::endl;
 		return nullptr;
 	}
 
@@ -366,29 +392,30 @@ static GLFWwindow* createWindow(unsigned int width, unsigned int height, const c
 	return window;
 }
 
-void sceneDraw(Model& model, Shader& shader, glm::mat4 transform)
+void processInput(GLFWwindow* window)
 {
-	shader.use();
-	shader.setTransform("model", glm::value_ptr(transform));
-	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
-	model.draw(shader);
-}
-
-void sceneDraw(Model& model, Shader& shader, glm::mat4 transform, std::vector<glm::vec3>& translations)
-{
-	shader.use();
-	shader.setTransform("model", glm::value_ptr(transform));
-	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
-	model.draw(shader, translations);
-}
-
-unsigned int uniformOffset(unsigned int increase, bool reset)
-{
-	static unsigned int offset = 0;
-	if (reset) {
-		offset = 0;
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(window, true);
 	}
-	unsigned int temp = offset;
-	offset += increase;
-	return temp;
+
+	bool cameraMoved = false;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		camera.updatePosition(camera.getDirection(), deltaTime);
+		cameraMoved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		camera.updatePosition(-camera.getDirection(), deltaTime);
+		cameraMoved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		camera.updatePosition(-camera.getRight(), deltaTime);
+		cameraMoved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		camera.updatePosition(camera.getRight(), deltaTime);
+		cameraMoved = true;
+	}
+	if (cameraMoved) {
+		cameraLight.updatePosition(camera.getPosition());
+	}
 }
