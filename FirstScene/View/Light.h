@@ -1,4 +1,7 @@
 #pragma once
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "ViewCone.h"
 
 /*
@@ -10,10 +13,10 @@
 class Light
 {
 public:
-	inline glm::vec3 getColor() const { return color; }
-	inline float getIntensity() const { return intensity; }
-	inline void updateColor(glm::vec3 color) { this->color = color; }
-	inline void updateIntensity(float intensity) { this->intensity = intensity; }
+	glm::vec3 getColor() const;
+	float getIntensity() const;
+	void updateColor(glm::vec3 color);
+	void updateIntensity(float intensity);
 protected:
 	Light(glm::vec3 color, float intensity);
 protected:
@@ -31,10 +34,10 @@ class PointLight : public Light
 {
 public:
 	PointLight(glm::vec3 position, glm::vec3 color, float intensity, Frustum frustum);
-	inline glm::vec3 getPosition() const { return position; }
-	inline void updatePosition(glm::vec3 position) { this->position = position; }
+	glm::vec3 getPosition() const;
+	void updatePosition(glm::vec3 position);
 	glm::mat4 getViewMatrix(unsigned int index) const;
-	inline glm::mat4 getProjectionMatrix() const { return frustum.getProjectionMatrix(); }
+	glm::mat4 getProjectionMatrix() const;
 protected:
 	glm::vec3 position;
 	Frustum frustum;
@@ -52,15 +55,18 @@ class SpotLight : public Light
 {
 public:
 	SpotLight(ViewCone viewCone, glm::vec3 color, float intensity, float cutoff, float outerCutoff);
-	inline glm::vec3 getPosition() const { return viewCone.position; }
-	inline glm::vec3 getDirection() const { return glm::normalize(viewCone.direction); }
-	inline void updatePosition(glm::vec3 position) { viewCone.position = position; }
-	inline void updateDirection(glm::vec3 direction) { viewCone.direction = direction; }
-	inline void updateTarget(glm::vec3 target) { viewCone.direction = target - viewCone.position; }
-	inline float getCutoff() const { return cutoff; }
-	inline float getOuterCutoff() const { return outerCutoff; }
-	inline glm::mat4 getViewMatrix() const { return viewCone.getViewMatrix(); }
-	inline glm::mat4 getProjectionMatrix() const { return viewCone.getProjectionMatrix(); }
+
+	glm::vec3 getPosition() const;
+	glm::vec3 getDirection() const;
+	void updatePosition(glm::vec3 position);
+	void updateDirection(glm::vec3 direction);
+	void updateTarget(glm::vec3 target);
+
+	float getCutoff() const;
+	float getOuterCutoff() const;
+
+	glm::mat4 getViewMatrix() const;
+	glm::mat4 getProjectionMatrix() const;
 protected:
 	ViewCone viewCone;
 	float cutoff;

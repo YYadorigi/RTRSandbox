@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -23,6 +22,7 @@ public:
 	ScreenQuad& operator=(const ScreenQuad& other) = delete;
 	ScreenQuad(ScreenQuad&& other) noexcept;
 	ScreenQuad& operator=(ScreenQuad&& other) noexcept;
+
 	void draw(Shader& shader, const std::vector<ScreenQuadTexture>& textures) const;
 	void draw(Shader& shader, std::vector<ScreenQuadTexture>&& textures) const;
 private:

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <array>
 #include <vector>
-#include <unordered_map>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -9,7 +8,7 @@
 #include <GLFW/glfw3.h>
 #include "macro.h"
 #include "utils/utils.h"
-#include "Texture/Skybox.h"
+#include "Skybox/Skybox.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
 
@@ -97,7 +96,7 @@ int main()
 	// Load skybox and models
 	Skybox skybox("assets/environment/Skybox", 0, true);
 	Model vase("assets/models/Vase/Vase.obj");
-	Model translucentVase("assets/models/Vase0.5/Vase.obj");
+	Model translucentVase("assets/models/Vase0.3/Vase.obj");
 	Model backpack("assets/models/Backpack/Backpack.obj", true);
 	Model bathroomFloor("assets/models/BathroomFloor/bathroom_floor.obj");
 
@@ -192,9 +191,9 @@ int main()
 		opaqueShader.setUniformBlock("Lights", 1);
 		for (unsigned int i = 0; i < spotLightCount; ++i) {
 			spotShadowFBOs[i].bindTexture(-1, 10 + i);
-			opaqueShader.setInt("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
+			opaqueShader.setUniform("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
 		}
-		opaqueShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+		opaqueShader.setUniform("viewPos", camera.getPosition());
 
 		model = glm::mat4(1.0f);
 		translations = {
@@ -239,9 +238,9 @@ int main()
 		transparentShader.setUniformBlock("Lights", 1);
 		for (unsigned int i = 0; i < spotLightCount; ++i) {
 			spotShadowFBOs[i].bindTexture(-1, 10 + i);
-			opaqueShader.setInt("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
+			opaqueShader.setUniform("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
 		}
-		transparentShader.setVec3("viewPos", glm::value_ptr(camera.getPosition()));
+		transparentShader.setUniform("viewPos", camera.getPosition());
 
 		model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 

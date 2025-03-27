@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,10 +12,7 @@ struct Frustum
 	float aspectRatio;
 	float nearDist;
 	float farDist;
-	inline glm::mat4 getProjectionMatrix() const
-	{
-		return glm::perspective(glm::radians(fov), aspectRatio, nearDist, farDist);
-	}
+	glm::mat4 getProjectionMatrix() const;
 };
 
 /**
@@ -32,17 +28,8 @@ struct ViewCone
 	glm::vec3 direction;
 	glm::vec3 up;
 	Frustum frustum;
-	inline glm::vec3 getRight() const { return glm::normalize(glm::cross(direction, up)); }
-	inline glm::mat4 getViewMatrix() const
-	{
-		return glm::lookAt(position, position + direction, up);
-	}
-	inline glm::mat4 getRearviewMatrix() const
-	{
-		return glm::lookAt(position, position - direction, up);
-	}
-	inline glm::mat4 getProjectionMatrix() const
-	{
-		return frustum.getProjectionMatrix();
-	}
+	glm::vec3 getRight() const;
+	glm::mat4 getViewMatrix() const;
+	glm::mat4 getRearviewMatrix() const;
+	glm::mat4 getProjectionMatrix() const;
 };

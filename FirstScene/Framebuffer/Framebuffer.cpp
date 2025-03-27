@@ -1,3 +1,5 @@
+#include <iostream>
+#include <glad/glad.h>
 #include "Framebuffer.h"
 
 Framebuffer::Framebuffer(unsigned int width, unsigned int height, bool msaa) :
@@ -82,7 +84,7 @@ std::shared_ptr<RenderTexture2D> Framebuffer::attachColorTexture(unsigned int in
 	return texture;
 }
 
-void Framebuffer::attachColorTexture(const std::shared_ptr<RenderTexture2D> texture)
+void Framebuffer::attachColorTexture(const std::shared_ptr<RenderTexture2D>& texture)
 {
 	unsigned int index = colorAttachmentCount++;
 	int maxAttach;
@@ -166,7 +168,7 @@ std::shared_ptr<RenderTexture2D> Framebuffer::attachDepthTexture(DepthStencilTyp
 	return texture;
 }
 
-void Framebuffer::attachDepthTexture(const std::shared_ptr<RenderTexture2D> texture)
+void Framebuffer::attachDepthTexture(const std::shared_ptr<RenderTexture2D>& texture)
 {
 	if (depthStencilAttachment != nullptr) {
 		std::cerr << "Depth stencil attachment already exists" << std::endl;
@@ -254,7 +256,14 @@ void Framebuffer::bindTexture(int texIndex, unsigned int targetIndex) const
 {
 	if (texIndex < 0) {
 		depthStencilAttachment->bind(targetIndex);
-	} else {
+	}
+	else {
 		colorAttachments[texIndex]->bind(targetIndex);
 	}
+}
+
+void Framebuffer::bind() const
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glViewport(0, 0, width, height);
 }

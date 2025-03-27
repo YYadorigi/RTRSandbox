@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -10,12 +11,18 @@ class Model
 {
 public:
 	Model(const std::string& path, bool flipY = false);
-	void draw(Shader& shader);
-	void draw(Shader& shader, std::vector<glm::vec3>& translations);
+	~Model() = default;
+	Model(const Model& other) = delete;
+	Model& operator=(const Model& other) = delete;
+	Model(Model&& other) noexcept;
+	Model& operator=(Model&& other) noexcept;
+
+	void draw(const Shader& shader);
+	void drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations);
 private:
-	void processNode(aiNode* node, const aiScene* scene);
-	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
-	std::vector<std::shared_ptr<TextureMap2D>> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
+	void processNode(const aiNode* node, const aiScene* scene);
+	Mesh processMesh(const aiMesh* mesh, const aiScene* scene);
+	std::vector<std::shared_ptr<TextureMap2D>> loadMaterialTextures(const aiMaterial* material, aiTextureType type, const std::string& typeName);
 private:
 	std::vector<Mesh> meshes;
 	std::vector<std::shared_ptr<TextureMap2D>> loadedTextures;

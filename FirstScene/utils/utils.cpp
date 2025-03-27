@@ -3,25 +3,25 @@
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform)
 {
 	shader.use();
-	shader.setTransform("model", glm::value_ptr(transform));
-	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
+	shader.setUniform("model", transform);
+	shader.setUniform("invModel", transform);
 	model.draw(shader);
 }
 
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform, std::vector<glm::vec3>& translations)
 {
 	shader.use();
-	shader.setTransform("model", glm::value_ptr(transform));
-	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
-	model.draw(shader, translations);
+	shader.setUniform("model", transform);
+	shader.setUniform("invModel", glm::inverse(transform));
+	model.drawInstanced(shader, translations);
 }
 
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform, std::vector<glm::vec3>&& translations)
 {
 	shader.use();
-	shader.setTransform("model", glm::value_ptr(transform));
-	shader.setTransform("invModel", glm::value_ptr(glm::inverse(transform)));
-	model.draw(shader, translations);
+	shader.setUniform("model", transform);
+	shader.setUniform("invModel", glm::inverse(transform));
+	model.drawInstanced(shader, translations);
 }
 
 unsigned int uniformOffset(unsigned int increase, bool reset)

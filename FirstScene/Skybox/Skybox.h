@@ -1,5 +1,6 @@
 #pragma once
-#include "Texture.h"
+#include <memory>
+#include "Texture/Texture.h"
 #include "Shader/shader.h"
 
 class Skybox
@@ -11,6 +12,7 @@ public:
 	Skybox& operator=(const Skybox& other) = delete;
 	Skybox(Skybox&& other) noexcept;
 	Skybox& operator=(Skybox&& other) noexcept;
+
 	void draw(Shader& shader);
 private:
 	std::shared_ptr<TextureMapCube> cubeMap;

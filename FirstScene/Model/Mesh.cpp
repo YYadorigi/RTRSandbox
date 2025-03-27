@@ -1,6 +1,9 @@
+#include <iostream>
+#include <glad/glad.h>
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices,
+Mesh::Mesh(
+	std::vector<Vertex> vertices,
 	std::vector<unsigned int> indices,
 	std::vector<std::shared_ptr<TextureMap2D>> textures,
 	float shininess,
@@ -58,7 +61,7 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
 	return *this;
 }
 
-void Mesh::draw(Shader& shader)
+void Mesh::draw(const Shader& shader)
 {
 	shader.use();
 	unsigned int ambientNr = 0;
@@ -70,19 +73,22 @@ void Mesh::draw(Shader& shader)
 		std::string texType = texture->getType();
 		if (texType == "ambient") {
 			number = std::to_string(++ambientNr);
-		} else if (texType == "diffuse") {
+		}
+		else if (texType == "diffuse") {
 			number = std::to_string(++diffuseNr);
-		} else if (texType == "specular") {
+		}
+		else if (texType == "specular") {
 			number = std::to_string(++specularNr);
-		} else {
+		}
+		else {
 			std::cerr << "Unknown texture type" << std::endl;
 			continue;
 		}
-		shader.setInt("material." + texType + number, idx);
+		shader.setUniform("material." + texType + number, idx);
 		++idx;
 	}
-	shader.setFloat("material.shininess", shininess);
-	shader.setFloat("material.opacity", opacity);
+	shader.setUniform("material.shininess", shininess);
+	shader.setUniform("material.opacity", opacity);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
@@ -95,7 +101,7 @@ void Mesh::draw(Shader& shader)
 	}
 }
 
-void Mesh::draw(Shader& shader, std::vector<glm::vec3>& translations)
+void Mesh::drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations)
 {
 	shader.use();
 	unsigned int ambientNr = 0;
@@ -107,22 +113,25 @@ void Mesh::draw(Shader& shader, std::vector<glm::vec3>& translations)
 		std::string texType = texture->getType();
 		if (texType == "ambient") {
 			number = std::to_string(++ambientNr);
-		} else if (texType == "diffuse") {
+		}
+		else if (texType == "diffuse") {
 			number = std::to_string(++diffuseNr);
-		} else if (texType == "specular") {
+		}
+		else if (texType == "specular") {
 			number = std::to_string(++specularNr);
-		} else {
+		}
+		else {
 			std::cerr << "Unknown texture type" << std::endl;
 			continue;
 		}
-		shader.setInt("material." + texType + number, idx);
+		shader.setUniform("material." + texType + number, idx);
 		++idx;
 	}
-	shader.setFloat("material.shininess", shininess);
-	shader.setFloat("material.opacity", opacity);
+	shader.setUniform("material.shininess", shininess);
+	shader.setUniform("material.opacity", opacity);
 
 	for (unsigned int idx{}; const auto & translation : translations) {
-		shader.setVec3(("offsets[" + std::to_string(idx) + "]"), glm::value_ptr(translation));
+		shader.setUniform(("offsets[" + std::to_string(idx) + "]"), translation);
 		++idx;
 	}
 

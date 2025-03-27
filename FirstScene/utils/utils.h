@@ -3,6 +3,7 @@
 #include "Shader/Shader.h"
 #include "Shader/UniformBuffer.h"
 #include "View/Light.h"
+#include "View/Camera.h"
 
 void sceneDraw(Model& model, Shader& shader, glm::mat4 transform);
 
@@ -17,15 +18,22 @@ void loadPointLightUniforms(UniformBuffer& lightsUBO, const PointLight& pointLig
 void loadSpotLightUniforms(UniformBuffer& lightsUBO, const SpotLight& spotLight, bool active = true);
 
 template<typename T>
-void loadViewProjUniforms(UniformBuffer& viewProjUBO, const T& camera)
+concept Viewer = requires(T viewer)
+{
+	{ viewer.getViewMatrix() } -> std::same_as<glm::mat4>;
+	{ viewer.getProjectionMatrix() } -> std::same_as<glm::mat4>;
+};
+
+template<Viewer T>
+void loadViewProjUniforms(UniformBuffer& viewProjUBO, const T& viewer)
 {
 	viewProjUBO.setData(
-		glm::value_ptr(camera.getViewMatrix()),
+		glm::value_ptr(viewer.getViewMatrix()),
 		sizeof(glm::mat4),
 		uniformOffset(sizeof(glm::mat4))
 	);
 	viewProjUBO.setData(
-		glm::value_ptr(camera.getProjectionMatrix()),
+		glm::value_ptr(viewer.getProjectionMatrix()),
 		sizeof(glm::mat4),
 		uniformOffset(sizeof(glm::mat4))
 	);

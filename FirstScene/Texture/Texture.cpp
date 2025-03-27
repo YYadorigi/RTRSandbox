@@ -1,11 +1,29 @@
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <iostream>
+#include <glad/glad.h>
 #include "Texture.h"
 
 Texture::~Texture()
 {
 	glDeleteTextures(1, &ID);
+}
+
+unsigned int Texture::getID() const
+{
+	return ID;
+}
+
+unsigned int Texture::getTarget() const
+{
+	return target;
+}
+
+void Texture::bind(unsigned int targetIndex) const
+{
+	glActiveTexture(GL_TEXTURE0 + targetIndex);
+	glBindTexture(target, ID);
 }
 
 Texture::Texture(unsigned int target) : target(target)
@@ -34,6 +52,26 @@ Texture& Texture::operator=(Texture&& other) noexcept
 	return *this;
 }
 
+void Texture::setWrapParameters(unsigned int wrapS, unsigned int wrapT, unsigned int wrapR) const
+{
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapT);
+	if (wrapR) {
+		glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapR);
+	}
+}
+
+void Texture::setFilterParameters(unsigned int minFilter, unsigned int magFilter) const
+{
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magFilter);
+}
+
+bool TextureMap::isLinear() const
+{
+	return !sRGB;
+}
+
 TextureMap::TextureMap(unsigned int target, bool sRGB, bool flipY) :
 	Texture(target), sRGB(sRGB), flipY(flipY)
 {}
@@ -56,6 +94,16 @@ TextureMap& TextureMap::operator=(TextureMap&& other) noexcept
 		other.flipY = false;
 	}
 	return *this;
+}
+
+bool RenderTexture::isMultisampled() const
+{
+	return multisampled;
+}
+
+unsigned int RenderTexture::getInternalFormat() const
+{
+	return internalFormat;
 }
 
 RenderTexture::RenderTexture(unsigned int target, unsigned int internalFormat, bool multisampled) :
@@ -83,9 +131,9 @@ RenderTexture& RenderTexture::operator=(RenderTexture&& other) noexcept
 }
 
 TextureMap2D::TextureMap2D(
-	const char* path,
-	std::string name,
-	std::string type,
+	const std::string& path,
+	const std::string& name,
+	const std::string& type,
 	unsigned int mipmapLevel,
 	unsigned int wrapS,
 	unsigned int wrapT,
@@ -99,17 +147,19 @@ TextureMap2D::TextureMap2D(
 
 	stbi_set_flip_vertically_on_load(flipY);
 
-	unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
 	if (data) {
 		unsigned int format = GL_RGB;
 		unsigned int internalFormat = GL_RGB;
 		if (nrChannels == 1) {
 			format = GL_RED;
 			internalFormat = GL_RED;
-		} else if (nrChannels == 3) {
+		}
+		else if (nrChannels == 3) {
 			format = GL_RGB;
 			internalFormat = sRGB ? GL_SRGB : GL_RGB;
-		} else if (nrChannels == 4) {
+		}
+		else if (nrChannels == 4) {
 			format = GL_RGBA;
 			internalFormat = sRGB ? GL_SRGB_ALPHA : GL_RGBA;
 		}
@@ -118,7 +168,8 @@ TextureMap2D::TextureMap2D(
 		glGenerateMipmap(GL_TEXTURE_2D);
 		setWrapParameters(wrapS, wrapT);
 		setFilterParameters(minFilter, magFilter);
-	} else {
+	}
+	else {
 		std::cerr << "Failed to load texture" << std::endl;
 	}
 
@@ -140,6 +191,16 @@ TextureMap2D& TextureMap2D::operator=(TextureMap2D&& other) noexcept
 		type = std::move(other.type);
 	}
 	return *this;
+}
+
+std::string TextureMap2D::getName() const
+{
+	return name;
+}
+
+std::string TextureMap2D::getType() const
+{
+	return type;
 }
 
 TextureMapCube::TextureMapCube(
@@ -166,16 +227,19 @@ TextureMapCube::TextureMapCube(
 			if (nrChannels == 1) {
 				format = GL_RED;
 				internalFormat = GL_RED;
-			} else if (nrChannels == 3) {
+			}
+			else if (nrChannels == 3) {
 				format = GL_RGB;
 				internalFormat = sRGB ? GL_SRGB : GL_RGB;
-			} else if (nrChannels == 4) {
+			}
+			else if (nrChannels == 4) {
 				format = GL_RGBA;
 				internalFormat = sRGB ? GL_SRGB_ALPHA : GL_RGBA;
 			}
 
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, mipmapLevel, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		} else {
+		}
+		else {
 			std::cerr << "Failed to load texture" << std::endl;
 		}
 
@@ -217,7 +281,8 @@ RenderTexture2D::RenderTexture2D(
 {
 	if (multisampled) {
 		glTexImage2DMultisample(target, 4, internalFormat, width, height, GL_TRUE);
-	} else {
+	}
+	else {
 		glTexImage2D(target, 0, internalFormat, width, height, 0, format, dataType, nullptr);
 	}
 	setWrapParameters(wrapS, wrapT);
@@ -252,7 +317,8 @@ RenderTextureCube::RenderTextureCube(
 	for (unsigned int idx = 0; idx < 6; ++idx) {
 		if (multisampled) {
 			glTexImage2DMultisample(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 4, internalFormat, width, height, GL_TRUE);
-		} else {
+		}
+		else {
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 0, internalFormat, width, height, 0, format, dataType, nullptr);
 		}
 	}

@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include <memory>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -27,8 +29,9 @@ public:
 	Mesh& operator=(const Mesh& other) = delete;
 	Mesh(Mesh&& other) noexcept;
 	Mesh& operator=(Mesh&& other) noexcept;
-	void draw(Shader& shader);
-	void draw(Shader& shader, std::vector<glm::vec3>& translations);
+
+	void draw(const Shader& shader);
+	void drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations);
 private:
 	void setupMesh();
 private:

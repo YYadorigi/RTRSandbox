@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include "ScreenQuad.h"
 
 ScreenQuad::ScreenQuad(float scale, glm::vec2 movement)
@@ -60,7 +61,7 @@ void ScreenQuad::draw(Shader& shader, const std::vector<ScreenQuadTexture>& text
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {
 		texture.framebuffer.bindTexture(texture.attachmentIndex, idx);
-		shader.setInt(texture.name.c_str(), idx);
+		shader.setUniform(texture.name, idx);
 		++idx;
 	}
 
@@ -80,7 +81,7 @@ void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture>&& textures)
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {
 		texture.framebuffer.bindTexture(texture.attachmentIndex, idx);
-		shader.setInt(texture.name.c_str(), idx);
+		shader.setUniform(texture.name, idx);
 		++idx;
 	}
 

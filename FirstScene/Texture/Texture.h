@@ -1,8 +1,6 @@
 #pragma once
-#include <iostream>
+#include <string>
 #include <array>
-#include <vector>
-#include <glad/glad.h>
 
 /**
 * This class represents an OpenGL texture object.
@@ -13,33 +11,19 @@
 class Texture
 {
 public:
-	virtual ~Texture();
-	inline unsigned int getID() const { return ID; }
-	inline unsigned int getTarget() const { return target; }
-	inline void bind(unsigned int targetIndex) const
-	{
-		glActiveTexture(GL_TEXTURE0 + targetIndex);
-		glBindTexture(target, ID);
-	}
+	unsigned int getID() const;
+	unsigned int getTarget() const;
+	void bind(unsigned int targetIndex) const;
 protected:
 	Texture(unsigned int target);
+	virtual ~Texture();
 	Texture(const Texture& other) = delete;
 	Texture& operator=(const Texture& other) = delete;
 	Texture(Texture&& other) noexcept;
 	Texture& operator=(Texture&& other) noexcept;
-	inline void setWrapParameters(unsigned int wrapS, unsigned int wrapT, unsigned int wrapR = NULL) const
-	{
-		glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
-		glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapT);
-		if (wrapR) {
-			glTexParameteri(target, GL_TEXTURE_WRAP_R, wrapR);
-		}
-	}
-	inline void setFilterParameters(unsigned int minFilter, unsigned int magFilter) const
-	{
-		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minFilter);
-		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magFilter);
-	}
+
+	void setWrapParameters(unsigned int wrapS, unsigned int wrapT, unsigned int wrapR = NULL) const;
+	void setFilterParameters(unsigned int minFilter, unsigned int magFilter) const;
 protected:
 	unsigned int ID;
 	unsigned int target;
@@ -56,10 +40,10 @@ protected:
 class TextureMap : public Texture
 {
 public:
-	virtual ~TextureMap() override = default;
-	inline bool isLinear() const { return !sRGB; }
+	bool isLinear() const;
 protected:
 	TextureMap(unsigned int target, bool sRGB = false, bool flipY = false);
+	virtual ~TextureMap() override = default;
 	TextureMap(const TextureMap& other) = delete;
 	TextureMap& operator=(const TextureMap& other) = delete;
 	TextureMap(TextureMap&& other) noexcept;
@@ -80,11 +64,11 @@ protected:
 class RenderTexture : public Texture
 {
 public:
-	virtual ~RenderTexture() override = default;
-	inline bool isMultisampled() const { return multisampled; }
-	inline unsigned int getInternalFormat() const { return internalFormat; }
+	bool isMultisampled() const;
+	unsigned int getInternalFormat() const;
 protected:
 	RenderTexture(unsigned int target, unsigned int internalFormat, bool multisampled = false);
+	virtual ~RenderTexture() override = default;
 	RenderTexture(const RenderTexture& other) = delete;
 	RenderTexture& operator=(const RenderTexture& other) = delete;
 	RenderTexture(RenderTexture&& other) noexcept;
@@ -101,9 +85,9 @@ class TextureMap2D : public TextureMap
 {
 public:
 	TextureMap2D(
-		const char* path,
-		std::string name,
-		std::string type,
+		const std::string& path,
+		const std::string& name,
+		const std::string& type,
 		unsigned int mipmapLevel,
 		unsigned int wrapS,
 		unsigned int wrapT,
@@ -117,8 +101,9 @@ public:
 	TextureMap2D& operator=(const TextureMap2D& other) = delete;
 	TextureMap2D(TextureMap2D&& other) noexcept;
 	TextureMap2D& operator=(TextureMap2D&& other) noexcept;
-	inline std::string getName() const { return name; }
-	inline std::string getType() const { return type; }
+
+	std::string getName() const;
+	std::string getType() const;
 private:
 	std::string name;	// used by assimp to identify textures
 	std::string type;	// used for drawing meshes, e.g., ambient, diffuse, specular

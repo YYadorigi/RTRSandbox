@@ -77,7 +77,7 @@ void main()
     for(int i = 0; i < MAX_LIGHTS_PER_TYPE; i++)
     {
         vec3 lightDir = normalize(spotLights[i].position - fragPos);
-        float bias = max(0.001 * (1.0 - dot(normal, lightDir)), 0.0001);
+        float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
         float shadowed = calculateSpotShadow(spotLights[i], spotShadowMaps[i], fragPos, bias);
         result += (1.0 - shadowed) * shadingSpotLight(spotLights[i], normal, fragPos, viewDir);
     }

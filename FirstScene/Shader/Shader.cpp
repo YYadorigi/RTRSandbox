@@ -1,6 +1,9 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include "Shader.h"
 
-Shader::Shader(const char* csPath)
+Shader::Shader(const std::string& csPath)
 {
 	std::string csCode;
 	std::ifstream csFile;
@@ -60,7 +63,7 @@ Shader::Shader(const char* csPath)
 	glDeleteShader(cs);
 }
 
-Shader::Shader(const char* vsPath, const char* fsPath)
+Shader::Shader(const std::string& vsPath, const std::string& fsPath)
 {
 	std::string vsCode;
 	std::string fsCode;
@@ -140,7 +143,7 @@ Shader::Shader(const char* vsPath, const char* fsPath)
 	glDeleteShader(fs);
 }
 
-Shader::Shader(const char* vsPath, const char* gsPath, const char* fsPath)
+Shader::Shader(const std::string& vsPath, const std::string& gsPath, const std::string& fsPath)
 {
 	std::string vsCode;
 	std::string gsCode;
@@ -259,4 +262,14 @@ Shader& Shader::operator=(Shader&& other) noexcept
 		other.ID = 0;
 	}
 	return *this;
+}
+
+void Shader::use() const
+{
+	glUseProgram(ID);
+}
+
+void Shader::setUniformBlock(const std::string& name, unsigned int bindingPoint) const
+{
+	glUniformBlockBinding(ID, glGetUniformBlockIndex(ID, name.c_str()), bindingPoint);
 }

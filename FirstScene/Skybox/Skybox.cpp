@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include "Skybox.h"
 
 Skybox::Skybox(const char* path, unsigned int mipmapLevel, bool sRGB, bool flipY)

@@ -1,6 +1,7 @@
 #pragma once
-#include <algorithm>
-#include <glm/gtc/quaternion.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "ViewCone.h"
 
 /*
@@ -15,20 +16,19 @@ class Camera
 {
 public:
 	Camera(ViewCone viewCone, float speed, float sensitivity);
-	inline glm::vec3 getPosition() const { return viewCone.position; }
-	inline glm::vec3 getDirection() const { return glm::normalize(viewCone.direction); }
-	inline float getFov() const { return viewCone.frustum.fov; }
-	inline glm::vec3 getUp() const { return viewCone.up; }
-	inline glm::vec3 getRight() const { return viewCone.getRight(); }
-	inline void updatePosition(glm::vec3 direction, float deltaTime)
-	{
-		viewCone.position += speed * deltaTime * glm::normalize(direction);
-	}
+
+	glm::vec3 getPosition() const;
+	glm::vec3 getDirection() const;
+	float getFov() const;
+	glm::vec3 getUp() const;
+	glm::vec3 getRight() const;
+	void updatePosition(glm::vec3 direction, float deltaTime);
 	void updateDirection(float offsetX, float offsetY);
 	void updateFov(float offset);
-	inline glm::mat4 getViewMatrix() const { return viewCone.getViewMatrix(); }
-	inline glm::mat4 getRearviewMatrix() const { return viewCone.getRearviewMatrix(); }
-	inline glm::mat4 getProjectionMatrix() const { return viewCone.getProjectionMatrix(); }
+
+	glm::mat4 getViewMatrix() const;
+	glm::mat4 getRearviewMatrix() const;
+	glm::mat4 getProjectionMatrix() const;
 protected:
 	ViewCone viewCone;
 	float speed;

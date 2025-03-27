@@ -1,7 +1,6 @@
 #pragma once
-#include <iostream>
 #include <vector>
-#include <glad/glad.h>
+#include <memory>
 #include "Texture/Texture.h"
 
 enum class DepthStencilType
@@ -23,10 +22,10 @@ public:
 	Framebuffer& operator=(Framebuffer&& other) noexcept;
 
 	std::shared_ptr<RenderTexture2D> attachColorTexture(unsigned int internalFormat, unsigned int format, unsigned dataType);
-	void attachColorTexture(const std::shared_ptr<RenderTexture2D> texture);
+	void attachColorTexture(const std::shared_ptr<RenderTexture2D>& texture);
 
 	std::shared_ptr<RenderTexture2D> attachDepthTexture(DepthStencilType type);
-	void attachDepthTexture(const std::shared_ptr<RenderTexture2D> texture);
+	void attachDepthTexture(const std::shared_ptr<RenderTexture2D>& texture);
 
 	void configureColorAttachments(const std::vector<unsigned int>& indices) const;
 	void configureColorAttachments(std::vector<unsigned int>&& indices) const;
@@ -35,11 +34,7 @@ public:
 	void blitDepthTexture(const Framebuffer& other) const;
 
 	void bindTexture(int texIndex, unsigned int targetIndex) const;	// (texIndex = -1) refers to depth texture
-	inline void bind() const
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-		glViewport(0, 0, width, height);
-	}
+	void bind() const;
 private:
 	unsigned int FBO;
 	unsigned int width, height;

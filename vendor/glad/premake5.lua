@@ -18,9 +18,9 @@ project "glad"
 		"include",
 	}
 
-	buildoptions {
-		"/utf-8",
-	}
+	optimize "On"
+
+	linktimeoptimization "On"
 
 	filter "configurations:Debug"
 		runtime "Debug"
@@ -28,4 +28,3 @@ project "glad"
 
 	filter "configurations:Release"
 		runtime "Release"
-		optimize "On"

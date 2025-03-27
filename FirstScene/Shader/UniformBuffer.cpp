@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include "UniformBuffer.h"
 
 UniformBuffer::UniformBuffer(unsigned int size)
@@ -27,5 +28,15 @@ UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept
 		other.UBO = 0;
 	}
 	return *this;
+}
+
+void UniformBuffer::setData(const void* data, unsigned int size, unsigned int offset) const
+{
+	glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+}
+
+void UniformBuffer::bind(unsigned int bindingPoint) const
+{
+	glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, UBO);
 }
 

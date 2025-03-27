@@ -1,3 +1,5 @@
+#include <iostream>
+#include <glad/glad.h>
 #include "Model.h"
 
 Model::Model(const std::string& path, bool flipY) : flipY(flipY)
@@ -16,25 +18,46 @@ Model::Model(const std::string& path, bool flipY) : flipY(flipY)
 	loadedTextures.clear();
 }
 
-void Model::draw(Shader& shader)
+Model::Model(Model&& other) noexcept
+{
+	meshes = std::move(other.meshes);
+	loadedTextures = std::move(other.loadedTextures);
+	directory = std::move(other.directory);
+	flipY = other.flipY;
+	other.flipY = false;
+}
+
+Model& Model::operator=(Model&& other) noexcept
+{
+	if (this != &other) {
+		meshes = std::move(other.meshes);
+		loadedTextures = std::move(other.loadedTextures);
+		directory = std::move(other.directory);
+		flipY = other.flipY;
+		other.flipY = false;
+	}
+	return *this;
+}
+
+void Model::draw(const Shader& shader)
 {
 	for (auto& mesh : meshes) {
 		mesh.draw(shader);
 	}
 }
 
-void Model::draw(Shader& shader, std::vector<glm::vec3>& translations)
+void Model::drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations)
 {
 	for (auto& mesh : meshes) {
-		mesh.draw(shader, translations);
+		mesh.drawInstanced(shader, translations);
 	}
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene)
+void Model::processNode(const aiNode* node, const aiScene* scene)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.emplace_back(std::move(processMesh(mesh, scene)));
+		meshes.emplace_back(processMesh(mesh, scene));
 	}
 
 	for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -42,7 +65,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 	}
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+Mesh Model::processMesh(const aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
@@ -72,7 +95,8 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 		if (hasTexCoords) {
 			vertex.texCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-		} else {
+		}
+		else {
 			vertex.texCoords = glm::vec2(0.0f, 0.0f);
 		}
 		vertices.emplace_back(std::move(vertex));
@@ -87,9 +111,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	if (hasMaterial) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		std::vector<std::shared_ptr<TextureMap2D>> ambientMaps = std::move(loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient"));
-		std::vector<std::shared_ptr<TextureMap2D>> diffuseMaps = std::move(loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse"));
-		std::vector<std::shared_ptr<TextureMap2D>> specularMaps = std::move(loadMaterialTextures(material, aiTextureType_SPECULAR, "specular"));
+		std::vector<std::shared_ptr<TextureMap2D>> ambientMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "ambient");
+		std::vector<std::shared_ptr<TextureMap2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
+		std::vector<std::shared_ptr<TextureMap2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
 		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
@@ -100,7 +124,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	return Mesh(vertices, indices, textures, shininess, opacity);
 }
 
-std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMaterial* material, aiTextureType type, std::string typeName)
+std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(const aiMaterial* material, aiTextureType type, const std::string& typeName)
 {
 	std::vector<std::shared_ptr<TextureMap2D>> textures;
 	bool sRGB = (type == aiTextureType_AMBIENT || type == aiTextureType_DIFFUSE || type == aiTextureType_SPECULAR);
@@ -121,8 +145,8 @@ std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMateria
 
 		if (!skip) {
 			std::string path = directory + '/' + name;
-			TextureMap2D texture = TextureMap2D(
-				path.c_str(),
+			std::shared_ptr<TextureMap2D> tex = std::make_shared<TextureMap2D>(
+				path,
 				name,
 				typeName,
 				0,
@@ -133,7 +157,6 @@ std::vector<std::shared_ptr<TextureMap2D>> Model::loadMaterialTextures(aiMateria
 				sRGB,
 				flipY
 			);
-			std::shared_ptr<TextureMap2D> tex = std::make_shared<TextureMap2D>(std::move(texture));
 			loadedTextures.emplace_back(tex);
 			textures.emplace_back(tex);
 		}
