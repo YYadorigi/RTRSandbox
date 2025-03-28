@@ -267,3 +267,27 @@ void Framebuffer::bind() const
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glViewport(0, 0, width, height);
 }
+
+void Framebuffer::draw(const Model& model, const Shader& shader, glm::mat4 transform) const
+{
+	shader.use();
+	shader.setUniform("model", transform);
+	shader.setUniform("invModel", transform);
+	model.draw(shader);
+}
+
+void Framebuffer::drawInstanced(const Model& model, const Shader& shader, glm::mat4 transform, const std::vector<glm::vec3>& translations) const
+{
+	shader.use();
+	shader.setUniform("model", transform);
+	shader.setUniform("invModel", glm::inverse(transform));
+	model.drawInstanced(shader, translations);
+}
+
+void Framebuffer::drawInstanced(const Model& model, const Shader& shader, glm::mat4 transform, std::vector<glm::vec3>&& translations) const
+{
+	shader.use();
+	shader.setUniform("model", transform);
+	shader.setUniform("invModel", glm::inverse(transform));
+	model.drawInstanced(shader, translations);
+}

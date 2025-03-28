@@ -23,8 +23,8 @@ public:
 	ScreenQuad(ScreenQuad&& other) noexcept;
 	ScreenQuad& operator=(ScreenQuad&& other) noexcept;
 
-	void draw(Shader& shader, const std::vector<ScreenQuadTexture>& textures) const;
-	void draw(Shader& shader, std::vector<ScreenQuadTexture>&& textures) const;
+	void draw(const Shader& shader, const std::vector<ScreenQuadTexture>& textures) const;
+	void draw(const Shader& shader, std::vector<ScreenQuadTexture>&& textures) const;
 private:
 	unsigned int VAO, VBO;
 };

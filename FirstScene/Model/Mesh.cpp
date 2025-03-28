@@ -61,7 +61,7 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
 	return *this;
 }
 
-void Mesh::draw(const Shader& shader)
+void Mesh::draw(const Shader& shader) const
 {
 	shader.use();
 	unsigned int ambientNr = 0;
@@ -101,7 +101,7 @@ void Mesh::draw(const Shader& shader)
 	}
 }
 
-void Mesh::drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations)
+void Mesh::drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations) const
 {
 	shader.use();
 	unsigned int ambientNr = 0;

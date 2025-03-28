@@ -56,7 +56,7 @@ ScreenQuad& ScreenQuad::operator=(ScreenQuad&& other) noexcept
 	return *this;
 }
 
-void ScreenQuad::draw(Shader& shader, const std::vector<ScreenQuadTexture>& textures) const
+void ScreenQuad::draw(const Shader& shader, const std::vector<ScreenQuadTexture>& textures) const
 {
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {
@@ -76,7 +76,7 @@ void ScreenQuad::draw(Shader& shader, const std::vector<ScreenQuadTexture>& text
 	}
 }
 
-void ScreenQuad::draw(Shader& shader, std::vector<ScreenQuadTexture>&& textures) const
+void ScreenQuad::draw(const Shader& shader, std::vector<ScreenQuadTexture>&& textures) const
 {
 	shader.use();
 	for (unsigned int idx{}; const auto & texture : textures) {

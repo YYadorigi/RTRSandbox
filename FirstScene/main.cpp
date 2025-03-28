@@ -7,10 +7,11 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "macro.h"
-#include "utils/utils.h"
 #include "Skybox/Skybox.h"
 #include "Framebuffer/Framebuffer.h"
 #include "Framebuffer/ScreenQuad.h"
+#include "Shader/Shader.h"
+#include "Shader/UniformBuffer.h"
 
 static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
@@ -118,16 +119,16 @@ int main()
 		unsigned int spotLightCount = 0;
 
 		lightsUBO.bind(1);
+		lightsUBO.resetOffset();
 
-		uniformOffset(0, true);
 		for (const auto& pointLight : pointLights) {
-			loadPointLightUniforms(lightsUBO, pointLight);
+			lightsUBO.loadLightUniforms(pointLight);
 			if (++pointLightCount >= MAX_LIGHTS_PER_TYPE) break;
 		}
 
-		uniformOffset(MAX_LIGHTS_PER_TYPE * POINT_LIGHT_BYTES, true);
+		lightsUBO.alignOffset(MAX_LIGHTS_PER_TYPE * POINT_LIGHT_BYTES);
 		for (const auto& spotLight : spotLights) {
-			loadSpotLightUniforms(lightsUBO, spotLight, spotLightCount == 0 ? cameraLightActive : true);
+			lightsUBO.loadLightUniforms(spotLight, spotLightCount == 0 ? cameraLightActive : true);
 			if (++spotLightCount >= MAX_LIGHTS_PER_TYPE) break;
 		}
 
@@ -136,12 +137,12 @@ int main()
 
 		// Shadow mapping render pass
 		for (unsigned int i = 0; i < spotLightCount; ++i) {
-			Framebuffer& spotShadowFBO = spotShadowFBOs[i];
-			SpotLight& spotLight = spotLights[i];
+			const Framebuffer& spotShadowFBO = spotShadowFBOs[i];
+			const SpotLight& spotLight = spotLights[i];
 
 			viewProjUBO.bind(0);
-			uniformOffset(0, true);
-			loadViewProjUniforms(viewProjUBO, spotLight);
+			viewProjUBO.resetOffset();
+			viewProjUBO.loadViewProjUniforms(spotLight);
 
 			spotShadowFBO.bind();
 
@@ -160,11 +161,11 @@ int main()
 				glm::vec3(0.0f, 0.0f, -1.0f),
 				glm::vec3(5.0f, 0.0f, -1.0f),
 			};
-			sceneDraw(backpack, shadowShader, model, translations);
+			spotShadowFBO.drawInstanced(backpack, shadowShader, model, translations);
 
 			model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -5.0f, 0.0f));
 			model = glm::scale(model, glm::vec3(0.01f));
-			sceneDraw(bathroomFloor, shadowShader, model);
+			spotShadowFBO.draw(bathroomFloor, shadowShader, model);
 
 			// Post-render settings
 			glDisable(GL_DEPTH_TEST);
@@ -172,8 +173,8 @@ int main()
 		}
 
 		viewProjUBO.bind(0);
-		uniformOffset(0, true);
-		loadViewProjUniforms(viewProjUBO, camera);
+		viewProjUBO.resetOffset();
+		viewProjUBO.loadViewProjUniforms(camera);
 
 		// Opaque render pass
 		opaqueFBO.bind();
@@ -201,11 +202,11 @@ int main()
 			glm::vec3(0.0f, 0.0f, -1.0f),
 			glm::vec3(5.0f, 0.0f, -1.0f),
 		};
-		sceneDraw(backpack, opaqueShader, model, translations);
+		opaqueFBO.drawInstanced(backpack, opaqueShader, model, translations);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -5.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.01f));
-		sceneDraw(bathroomFloor, opaqueShader, model);
+		opaqueFBO.draw(bathroomFloor, opaqueShader, model);
 
 		// Skybox drawcall
 		skyboxShader.use();
@@ -254,7 +255,7 @@ int main()
 				);
 			}
 		}
-		sceneDraw(translucentVase, transparentShader, model, translations);
+		transparentFBO.drawInstanced(translucentVase, transparentShader, model, translations);
 
 		// Post-render settings
 		glDepthMask(GL_TRUE);

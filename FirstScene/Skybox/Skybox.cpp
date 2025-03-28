@@ -111,7 +111,7 @@ Skybox& Skybox::operator=(Skybox&& other) noexcept
 	return *this;
 }
 
-void Skybox::draw(Shader& shader)
+void Skybox::draw(const Shader& shader) const
 {
 	shader.use();
 	cubeMap->bind(0);

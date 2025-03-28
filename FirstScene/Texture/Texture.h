@@ -116,7 +116,7 @@ class TextureMapCube : public TextureMap
 {
 public:
 	TextureMapCube(
-		std::array<std::string, 6> paths,
+		std::array<std::string, 6>& paths,
 		unsigned int mipmapLevel,
 		unsigned int wrapS,
 		unsigned int wrapT,

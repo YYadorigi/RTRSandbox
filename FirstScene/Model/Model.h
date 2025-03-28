@@ -17,8 +17,8 @@ public:
 	Model(Model&& other) noexcept;
 	Model& operator=(Model&& other) noexcept;
 
-	void draw(const Shader& shader);
-	void drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations);
+	void draw(const Shader& shader) const;
+	void drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations) const;
 private:
 	void processNode(const aiNode* node, const aiScene* scene);
 	Mesh processMesh(const aiMesh* mesh, const aiScene* scene);

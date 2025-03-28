@@ -204,7 +204,7 @@ std::string TextureMap2D::getType() const
 }
 
 TextureMapCube::TextureMapCube(
-	std::array<std::string, 6> paths,
+	std::array<std::string, 6>& paths,
 	unsigned int mipmapLevel,
 	unsigned int wrapS,
 	unsigned int wrapT,

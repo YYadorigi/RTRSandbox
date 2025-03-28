@@ -30,8 +30,8 @@ public:
 	Mesh(Mesh&& other) noexcept;
 	Mesh& operator=(Mesh&& other) noexcept;
 
-	void draw(const Shader& shader);
-	void drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations);
+	void draw(const Shader& shader) const;
+	void drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations) const;
 private:
 	void setupMesh();
 private:

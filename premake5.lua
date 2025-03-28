@@ -48,8 +48,6 @@ project "FirstScene"
 		"%{prj.name}/Skybox/**.cpp",
 		"%{prj.name}/Texture/**.h",
 		"%{prj.name}/Texture/**.cpp",
-		"%{prj.name}/utils/**.h",
-		"%{prj.name}/utils/**.cpp",
 		"%{prj.name}/View/**.h",
 		"%{prj.name}/View/**.cpp",
 		"%{prj.name}/**.h",

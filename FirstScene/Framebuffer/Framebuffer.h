@@ -2,6 +2,8 @@
 #include <vector>
 #include <memory>
 #include "Texture/Texture.h"
+#include "Model/Model.h"
+#include "Shader/Shader.h"
 
 enum class DepthStencilType
 {
@@ -35,6 +37,10 @@ public:
 
 	void bindTexture(int texIndex, unsigned int targetIndex) const;	// (texIndex = -1) refers to depth texture
 	void bind() const;
+
+	void draw(const Model& model, const Shader& shader, glm::mat4 transform) const;
+	void drawInstanced(const Model& model, const Shader& shader, glm::mat4 transform, const std::vector<glm::vec3>& translations) const;
+	void drawInstanced(const Model& model, const Shader& shader, glm::mat4 transform, std::vector<glm::vec3>&& translations) const;
 private:
 	unsigned int FBO;
 	unsigned int width, height;

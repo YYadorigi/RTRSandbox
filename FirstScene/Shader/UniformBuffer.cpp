@@ -30,9 +30,20 @@ UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept
 	return *this;
 }
 
-void UniformBuffer::setData(const void* data, unsigned int size, unsigned int offset) const
+void UniformBuffer::loadData(const void* data, unsigned int size)
 {
 	glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+	offset += size;
+}
+
+void UniformBuffer::resetOffset()
+{
+	offset = 0;
+}
+
+void UniformBuffer::alignOffset(unsigned int alignment)
+{
+	offset = (offset + alignment - 1) & ~(alignment - 1);
 }
 
 void UniformBuffer::bind(unsigned int bindingPoint) const

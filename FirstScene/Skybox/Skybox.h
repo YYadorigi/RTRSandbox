@@ -13,7 +13,7 @@ public:
 	Skybox(Skybox&& other) noexcept;
 	Skybox& operator=(Skybox&& other) noexcept;
 
-	void draw(Shader& shader);
+	void draw(const Shader& shader) const;
 private:
 	std::shared_ptr<TextureMapCube> cubeMap;
 	unsigned int VAO, VBO;

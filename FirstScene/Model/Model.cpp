@@ -39,14 +39,14 @@ Model& Model::operator=(Model&& other) noexcept
 	return *this;
 }
 
-void Model::draw(const Shader& shader)
+void Model::draw(const Shader& shader) const
 {
 	for (auto& mesh : meshes) {
 		mesh.draw(shader);
 	}
 }
 
-void Model::drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations)
+void Model::drawInstanced(const Shader& shader, const std::vector<glm::vec3>& translations) const
 {
 	for (auto& mesh : meshes) {
 		mesh.drawInstanced(shader, translations);
