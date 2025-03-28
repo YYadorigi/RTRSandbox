@@ -30,7 +30,7 @@ project "FirstScene"
 	location "FirstScene"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "C++20"
+	cppdialect "C++23"
 	systemversion "latest"
 	staticruntime "On"
 

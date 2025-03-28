@@ -1,6 +1,6 @@
 #include <iostream>
-#include <array>
 #include <vector>
+#include <ranges>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -17,6 +17,9 @@ static float deltaTime = 0.0f;	// Time between current frame and last frame
 static float lastFrame = 0.0f;	// Time of last frame
 static float lastX = static_cast<float>(SCREEN_WIDTH / 2);	// Cursor X position
 static float lastY = static_cast<float>(SCREEN_HEIGHT / 2);	// Cursor Y position
+
+static glm::mat4 model{};
+static std::vector<glm::vec3> translations{};
 
 int initOpenGL(unsigned int majorVer, unsigned int minorVer, unsigned int profile);
 
@@ -50,15 +53,22 @@ int main()
 	intermediateFBO.attachColorTexture(GL_R32F, GL_RED, GL_FLOAT);			// revealge texture
 
 	// Create shadow map buffers
-	std::array<Framebuffer, MAX_LIGHTS_PER_TYPE> spotShadowFBOs = {
-		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT),
-		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT),
-		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT),
-		Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT)
-	};
+	std::vector<Framebuffer> pointShadowFBOs{};
+	std::vector<Framebuffer> spotShadowFBOs{};
 
-	for (auto& spotShadowFBO : spotShadowFBOs) {
-		spotShadowFBO.attachDepthTexture(DepthStencilType::DEPTH);
+	unsigned int pointLightCount = 0;
+	unsigned int spotLightCount = 0;
+
+	for (const auto& pointLight : pointLights) {
+		pointShadowFBOs.emplace_back(Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT));
+		pointShadowFBOs.back().attachDepthTexture(DepthStencilType::DEPTH);
+		if (++pointLightCount >= MAX_LIGHTS_PER_TYPE) break;
+	}
+
+	for (const auto& spotLight : spotLights) {
+		spotShadowFBOs.emplace_back(Framebuffer(SHADOW_WIDTH, SHADOW_HEIGHT));
+		spotShadowFBOs.back().attachDepthTexture(DepthStencilType::DEPTH);
+		if (++spotLightCount >= MAX_LIGHTS_PER_TYPE) break;
 	}
 
 	// Create screen quad
@@ -115,31 +125,23 @@ int main()
 		processInput(window);
 
 		// Light uniforms
-		unsigned int pointLightCount = 0;
-		unsigned int spotLightCount = 0;
-
 		lightsUBO.bind(1);
 		lightsUBO.resetOffset();
 
-		for (const auto& pointLight : pointLights) {
+		for (unsigned int idx{}; const auto & pointLight : pointLights) {
 			lightsUBO.loadLightUniforms(pointLight);
-			if (++pointLightCount >= MAX_LIGHTS_PER_TYPE) break;
+			if (++idx >= pointLightCount) break;
 		}
 
 		lightsUBO.alignOffset(MAX_LIGHTS_PER_TYPE * POINT_LIGHT_BYTES);
-		for (const auto& spotLight : spotLights) {
-			lightsUBO.loadLightUniforms(spotLight, spotLightCount == 0 ? cameraLightActive : true);
-			if (++spotLightCount >= MAX_LIGHTS_PER_TYPE) break;
+
+		for (unsigned int idx{}; const auto & spotLight : spotLights) {
+			lightsUBO.loadLightUniforms(spotLight, idx == 0 ? cameraLightActive : true);
+			if (++idx >= spotLightCount) break;
 		}
 
-		glm::mat4 model{};
-		std::vector<glm::vec3> translations{};
-
 		// Shadow mapping render pass
-		for (unsigned int i = 0; i < spotLightCount; ++i) {
-			const Framebuffer& spotShadowFBO = spotShadowFBOs[i];
-			const SpotLight& spotLight = spotLights[i];
-
+		for (const auto& [spotShadowFBO, spotLight] : std::views::zip(spotShadowFBOs, spotLights)) {
 			viewProjUBO.bind(0);
 			viewProjUBO.resetOffset();
 			viewProjUBO.loadViewProjUniforms(spotLight);
@@ -190,11 +192,13 @@ int main()
 		opaqueShader.use();
 		opaqueShader.setUniformBlock("VPMatrices", 0);
 		opaqueShader.setUniformBlock("Lights", 1);
-		for (unsigned int i = 0; i < spotLightCount; ++i) {
-			spotShadowFBOs[i].bindTexture(-1, 10 + i);
-			opaqueShader.setUniform("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
-		}
-		opaqueShader.setUniform("viewPos", camera.getPosition());
+		for (unsigned int idx{}; const auto & spotShadowFBO : spotShadowFBOs) {
+			static int maxBinding;
+			glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxBinding);
+			spotShadowFBO.bindTexture(-1, maxBinding - 1 - idx);
+			opaqueShader.setUniform("spotShadowMaps[" + std::to_string(idx) + "]", maxBinding - 1 - idx);
+		}	// TODO
+		opaqueShader.setUniform("cameraPosition", camera.getPosition());
 
 		model = glm::mat4(1.0f);
 		translations = {
@@ -237,11 +241,13 @@ int main()
 		transparentShader.use();
 		transparentShader.setUniformBlock("VPMatrices", 0);
 		transparentShader.setUniformBlock("Lights", 1);
-		for (unsigned int i = 0; i < spotLightCount; ++i) {
-			spotShadowFBOs[i].bindTexture(-1, 10 + i);
-			opaqueShader.setUniform("spotShadowMaps[" + std::to_string(i) + "]", 10 + i);
-		}
-		transparentShader.setUniform("viewPos", camera.getPosition());
+		for (unsigned int idx{}; const auto & spotShadowFBO : spotShadowFBOs) {
+			static int maxBinding;
+			glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxBinding);
+			spotShadowFBO.bindTexture(-1, maxBinding - 1 - idx);
+			transparentShader.setUniform("spotShadowMaps[" + std::to_string(idx) + "]", maxBinding - 1 - idx);
+		}	// TODO
+		transparentShader.setUniform("cameraPosition", camera.getPosition());
 
 		model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
